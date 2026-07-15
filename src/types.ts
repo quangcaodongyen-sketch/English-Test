@@ -24,6 +24,8 @@ export interface Exam {
   grade: number; // 6, 7, 8, 9
   term?: string;
   academicYear?: string;
+  units?: number[];
+  difficulty?: string;
   testType: "15m" | "midterm" | "finalterm" | string;
   duration: number; // in minutes
   totalQuestions: number;

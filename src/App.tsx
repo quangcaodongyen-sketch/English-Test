@@ -538,9 +538,11 @@ export default function App() {
     });
 
     if (exam.testType === "midterm") {
+      if (mcqCount !== 45) return `Số câu trắc nghiệm không đúng (Hiện tại: ${mcqCount}, Yêu cầu: 45)`;
+      if (writingCount !== 1) return `Số câu tự luận (Part 8) không đúng (Hiện tại: ${writingCount}, Yêu cầu: 1)`;
+    } else if (exam.testType === "finalterm") {
       if (mcqCount !== 36) return `Số câu trắc nghiệm không đúng (Hiện tại: ${mcqCount}, Yêu cầu: 36)`;
       if (writingCount !== 1) return `Số câu tự luận (Part 8) không đúng (Hiện tại: ${writingCount}, Yêu cầu: 1)`;
-      if (points !== 10) return `Tổng điểm không bằng 10 (Hiện tại: ${points})`;
     } else if (exam.testType === "15m") {
       if (mcqCount !== 20) return `Số câu trắc nghiệm không đúng (Hiện tại: ${mcqCount}, Yêu cầu: 20)`;
       if (writingCount !== 0) return `Đề 15 phút không được có câu tự luận (Hiện tại: ${writingCount})`;
@@ -574,6 +576,26 @@ export default function App() {
     } catch (error) {
       showToast("Lỗi trong quá trình xuất file", "error");
     }
+  };
+
+  const handleGenerateSimilar = () => {
+    if (!currentExam) return;
+    
+    // Prefill form states with the exam's settings
+    setSelectedGrade(currentExam.grade);
+    if (currentExam.units && currentExam.units.length > 0) {
+      setSelectedUnits(currentExam.units);
+    }
+    setTestType(currentExam.testType);
+    if (currentExam.term) setTerm(currentExam.term);
+    if (currentExam.academicYear) setAcademicYear(currentExam.academicYear);
+    if (currentExam.difficulty) setDifficulty(currentExam.difficulty);
+    
+    // Switch to create tab
+    setExamMode("none");
+    setActiveTab("create");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    showToast("Đã nạp cài đặt của đề. Bạn có thể thêm 'Yêu cầu bổ sung' để tạo đề mới!", "info");
   };
 
   return (
@@ -769,8 +791,8 @@ export default function App() {
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white shadow-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm font-medium"
                       >
                         <option value="15m">⏱️ Kiểm tra 15 Phút (20 câu trắc nghiệm)</option>
-                        <option value="midterm">📚 Kiểm tra Giữa kỳ (40 câu đầy đủ kỹ năng)</option>
-                        <option value="finalterm">🏆 Kiểm tra Cuối kỳ (40/50 câu chuẩn ma trận)</option>
+                        <option value="midterm">📚 Kiểm tra Giữa kỳ (45 câu trắc nghiệm + 1 tự luận)</option>
+                        <option value="finalterm">🏆 Kiểm tra Cuối kỳ (36 câu trắc nghiệm + 1 tự luận)</option>
                       </select>
                     </div>
 
@@ -1340,7 +1362,17 @@ export default function App() {
                   className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-amber-50 hover:text-amber-700 text-slate-700 rounded-lg text-xs font-semibold transition-colors border border-slate-200 cursor-pointer"
                 >
                   <Shuffle className="w-3.5 h-3.5" />
-                  <span>Xáo trộn câu hỏi</span>
+                  <span>Đảo câu hỏi / Tạo Mã đề</span>
+                </button>
+
+                {/* Generate Similar */}
+                <button
+                  onClick={handleGenerateSimilar}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-purple-50 hover:text-purple-700 text-slate-700 rounded-lg text-xs font-semibold transition-colors border border-slate-200 cursor-pointer"
+                  title="Sao chép các tùy chọn của đề này để sinh một đề tương tự"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Sinh đề tương tự</span>
                 </button>
 
                 {/* Switch to Interactive Mock test */}
