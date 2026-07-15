@@ -29,8 +29,8 @@ Tất cả 20 câu trắc nghiệm đều chỉ có TỐI ĐA 3 đáp án: A, B,
     totalQuestions = 46;
     titleString = `ĐỀ KIỂM TRA ĐÁNH GIÁ GIỮA HỌC KÌ ${term?.includes("II") ? "II" : "I"} - TIẾNG ANH LỚP ${grade}`;
     structureGuideline = `CẤU TRÚC ĐỀ BẮT BUỘC (8 Phần - 45 câu trắc nghiệm + 1 bài viết):
-- Part 1. Listen and decide if each statement is True (T) or False (F) (5 câu - từ câu 1 đến 5). Chỉ dùng A. True và B. False.
-- Part 2. Listen and circle the best answer A, B or C (5 câu - từ câu 6 đến 10).
+- Part 1. Listening - Monologue (Độc thoại): Listen and decide if each statement is True (T) or False (F) (5 câu - từ câu 1 đến 5). Chỉ dùng A. True và B. False.
+- Part 2. Listening - Dialogue (Đối thoại Nam/Nữ): Listen and circle the best answer A, B or C (5 câu - từ câu 6 đến 10).
 - Part 3. Choose the best answer A, B or C to complete the sentences (15 câu - từ câu 11 đến 25).
 - Part 4. Read the passage and choose the correct word A, B or C for each blank (5 câu - từ câu 26 đến 30).
 - Part 5. Read the passage and choose the best answer A, B or C (5 câu - từ câu 31 đến 35).
@@ -46,8 +46,8 @@ Tất cả câu trắc nghiệm đều chỉ có TỐI ĐA 3 đáp án: A, B, C.
     totalQuestions = 37;
     titleString = `ĐỀ KIỂM TRA ĐÁNH GIÁ CUỐI HỌC KÌ ${term?.includes("II") ? "II" : "I"} - TIẾNG ANH LỚP ${grade}`;
     structureGuideline = `CẤU TRÚC ĐỀ BẮT BUỘC (8 Phần - 36 câu trắc nghiệm + 1 bài viết):
-- Part 1. Listen and circle the best answer A, B, or C (5 câu - từ câu 1 đến 5).
-- Part 2. Listen and circle the best answer A or B (True/False) (5 câu - từ câu 6 đến 10). Chỉ dùng A. True và B. False.
+- Part 1. Listening - Dialogue (Đối thoại Nam/Nữ): Listen and circle the best answer A, B, or C (5 câu - từ câu 1 đến 5).
+- Part 2. Listening - Monologue (Độc thoại): Listen and circle the best answer A or B (True/False) (5 câu - từ câu 6 đến 10). Chỉ dùng A. True và B. False.
 - Part 3. Choose A, B, or C to complete the following sentences (12 câu - từ câu 11 đến 22).
 - Part 4. Read and choose the best answer A, B or C to complete the passage (5 câu - từ câu 23 đến 27).
 - Part 5. Read the passage and choose the best answer A, B or C (5 câu - từ câu 28 đến 32).
@@ -60,7 +60,8 @@ Tất cả câu trắc nghiệm đều chỉ có TỐI ĐA 3 đáp án: A, B, C.
   }
 
   return `Bạn là trợ lý tạo đề kiểm tra môn Tiếng Anh THCS. Nhiệm vụ của bạn là tạo đề kiểm tra ${testType === "15m" ? "15 phút" : (term || "giữa học kỳ")} cho lớp ${grade} theo đúng mẫu đã nạp. Mỗi câu trắc nghiệm chỉ có tối đa 3 đáp án A, B, C. Không bao giờ tạo đáp án D. Dạng True/False chỉ dùng A. True và B. False. Phải tạo kèm đáp án, ma trận và đặc tả. Nội dung phải bám lớp ${grade}, học kỳ, unit, chủ đề, từ vựng và ngữ pháp người dùng nhập.
-${pdfContext ? `\nĐẶC BIÊT QUAN TRỌNG: Hãy sử dụng các kiến thức và từ vựng, ngữ pháp được trích xuất từ Sách giáo khoa dưới đây để ra đề (Đảm bảo độ chính xác và bám sát SGK 100%):\n<TEXTBOOK_CONTEXT>\n${pdfContext}\n</TEXTBOOK_CONTEXT>\n` : ""}
+
+${pdfContext ? `\nĐẶC BIỆT QUAN TRỌNG: Hãy sử dụng các kiến thức và từ vựng, ngữ pháp được trích xuất từ tài liệu tham khảo/Sách giáo khoa dưới đây để ra đề (Đảm bảo độ chính xác và bám sát tài liệu tham khảo 100%):\n<TEXTBOOK_CONTEXT>\n${pdfContext}\n</TEXTBOOK_CONTEXT>\n` : ""}
 Thông tin bài kiểm tra:
 - Khối lớp: Lớp ${grade}
 - Học kỳ: ${term || "Giữa kỳ I"}
@@ -75,6 +76,11 @@ ${structureGuideline}
 
 ${metaData}
 
+YÊU CẦU BẮT BUỘC VỀ NỘI DUNG:
+1. ĐỐI VỚI BÀI ĐỌC (Part 4, Part 5): Phải viết đầy đủ đoạn văn đọc hiểu (Reading Passage) ở phần "instruction" của Part tương ứng đó. TUYỆT ĐỐI không được để trống đoạn văn. Ví dụ ở Part 4: "Read the passage and choose the correct word... [Nội dung đoạn văn có các chỗ trống (26), (27)...]". Ở Part 5: "Read the passage and choose the best answer... [Nội dung đoạn văn đọc hiểu hoàn chỉnh]".
+2. ĐỐI VỚI BÀI NGHE (Part 1, Part 2): Phải viết lời thoại bài nghe (Audio Transcript) đầy đủ cho cả 2 bài nghe (bài độc thoại True/False và bài đối thoại Nam/Nữ) vào trường "transcripts" của kết quả JSON. Không được ghi chung chung mà phải có kịch bản lời thoại chi tiết.
+3. ĐỐI VỚI ĐÁP ÁN: Giải thích ở trường "explanation" phải viết bằng tiếng Việt và giải thích chi tiết, cặn kẽ tại sao chọn đáp án đó (ví dụ giải thích cấu trúc ngữ pháp hay nghĩa của từ vựng).
+
 Định dạng kết quả trả về phải là một JSON hoàn hảo tuân thủ schema sau:
 {
   "title": "${titleString}",
@@ -87,14 +93,14 @@ ${metaData}
   "parts": [
     {
       "title": "Tên phần (ví dụ: Part I: Vocabulary)",
-      "instruction": "Yêu cầu của phần thi (ví dụ: Choose the best answer A, B, or C...)",
+      "instruction": "Yêu cầu của phần thi kèm theo đoạn văn đọc hiểu hoàn chỉnh nếu là phần thi Đọc (Ví dụ: Read the passage... [Nội dung đoạn văn đọc hiểu])",
       "questions": [
         {
           "id": "1",
           "questionText": "Nội dung câu hỏi (chỉ có 3 lựa chọn A, B, C)",
           "options": ["A. ...", "B. ...", "C. ..."],
           "correctAnswer": "A",
-          "explanation": "Giải thích chi tiết",
+          "explanation": "Giải thích chi tiết bằng tiếng Việt lý do chọn đáp án này",
           "difficulty": "Nhận biết",
           "topic": "Chủ đề"
         }
@@ -103,8 +109,8 @@ ${metaData}
   ],
   "matrixData": "Nội dung bảng ma trận chi tiết dưới dạng Markdown",
   "specData": "Nội dung bảng đặc tả chi tiết dưới dạng Markdown",
-  "transcripts": "Nội dung transcript phần nghe (nếu có)",
-  "writingRubric": "Gợi ý chấm điểm phần viết (nếu có)"
+  "transcripts": "Nội dung lời thoại (Audio Transcript) chi tiết cho cả 2 bài nghe (Độc thoại True/False và Đối thoại Nam/Nữ)",
+  "writingRubric": "Gợi ý chấm điểm phần viết chi tiết kèm bài mẫu tham khảo"
 }
 
 Hãy trả về duy nhất chuỗi JSON hợp lệ. Không bao gồm bất kỳ phần text giới thiệu hay dấu nháy \`\`\`json ở ngoài.`;
