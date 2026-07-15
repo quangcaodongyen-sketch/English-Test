@@ -426,6 +426,28 @@ async function callGeminiAI(prompt: string, customApiKey?: string, selectedModel
       console.log(`Falling back to next model: ${MODELS[modelIndex + 1]}`);
       return callGeminiAI(prompt, customApiKey, undefined, modelIndex + 1);
     }
+    
+    // If no key is provided, try Free Auto API (Pollinations)
+    if (!customApiKey && (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === "MY_GEMINI_API_KEY")) {
+      console.log("Using Free Automatic API (Pollinations.ai) as fallback...");
+      try {
+        const fetchRes = await fetch("https://text.pollinations.ai/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [{ role: "user", content: prompt + "\n\nRETURN ONLY VALID JSON." }],
+            model: "openai",
+            jsonMode: true
+          })
+        });
+        
+        const text = await fetchRes.text();
+        const parsed = JSON.parse(text.trim());
+        return { data: parsed, modelUsed: "pollinations-free-auto" };
+      } catch (e) {
+        console.error("Free API fallback failed:", e);
+      }
+    }
 
     throw error;
   }
@@ -472,6 +494,23 @@ ${contextExam ? `Người dùng đang xem đề thi có tiêu đề "${contextEx
 
     const keyToUse = apiKey || process.env.GEMINI_API_KEY;
     const modelToUse = selectedModel && MODELS.includes(selectedModel) ? selectedModel : "gemini-3.5-flash";
+
+    if (!keyToUse || keyToUse === "MY_GEMINI_API_KEY") {
+      // Use free API fallback
+      const fetchRes = await fetch("https://text.pollinations.ai/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            { role: "system", content: systemInstruction },
+            { role: "user", content: message }
+          ],
+          model: "openai"
+        })
+      });
+      const text = await fetchRes.text();
+      return res.json({ text });
+    }
 
     const ai = new GoogleGenAI({
       apiKey: keyToUse,
@@ -574,4 +613,9 @@ async function startServer() {
   });
 }
 
-startServer();
+// Check if running on Vercel. Vercel sets the VERCEL env variable.
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;

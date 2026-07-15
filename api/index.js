@@ -1,0 +1,3 @@
+// Vercel Serverless Function entrypoint
+const server = require("../dist/server.cjs");
+module.exports = server.default || server;

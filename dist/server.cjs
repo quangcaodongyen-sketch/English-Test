@@ -4,6 +4,10 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
@@ -20,8 +24,14 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // server.ts
+var server_exports = {};
+__export(server_exports, {
+  default: () => server_default
+});
+module.exports = __toCommonJS(server_exports);
 var import_express = __toESM(require("express"), 1);
 var import_path = __toESM(require("path"), 1);
 var import_vite = require("vite");
@@ -291,45 +301,82 @@ function createTestPrompt(grade, units, testType, difficulty, customPrompt, term
     }
     return `Unit ${u}`;
   }).join("\n");
-  return `B\u1EA1n l\xE0 tr\u1EE3 l\xFD t\u1EA1o \u0111\u1EC1 ki\u1EC3m tra m\xF4n Ti\u1EBFng Anh THCS. Nhi\u1EC7m v\u1EE5 c\u1EE7a b\u1EA1n l\xE0 t\u1EA1o \u0111\u1EC1 ki\u1EC3m tra ${term || "gi\u1EEFa h\u1ECDc k\u1EF3"} cho l\u1EDBp ${grade} theo \u0111\xFAng m\u1EABu \u0111\xE3 n\u1EA1p. Lu\xF4n gi\u1EEF \u0111\xFAng 36 c\xE2u tr\u1EAFc nghi\u1EC7m v\xE0 1 b\xE0i vi\u1EBFt. M\u1ED7i c\xE2u tr\u1EAFc nghi\u1EC7m ch\u1EC9 c\xF3 t\u1ED1i \u0111a 3 \u0111\xE1p \xE1n A, B, C. Kh\xF4ng bao gi\u1EDD t\u1EA1o \u0111\xE1p \xE1n D. D\u1EA1ng True/False ch\u1EC9 d\xF9ng A. True v\xE0 B. False. \u0110\u1EC1 ph\u1EA3i c\xF3 Part 1 \u0111\u1EBFn Part 8 \u0111\xFAng th\u1EE9 t\u1EF1. T\u1ED5ng \u0111i\u1EC3m l\xE0 10. Ph\u1EA3i t\u1EA1o k\xE8m \u0111\xE1p \xE1n, transcript listening, ma tr\u1EADn v\xE0 \u0111\u1EB7c t\u1EA3. N\u1ED9i dung ph\u1EA3i b\xE1m l\u1EDBp ${grade}, h\u1ECDc k\u1EF3, unit, ch\u1EE7 \u0111\u1EC1, t\u1EEB v\u1EF1ng v\xE0 ng\u1EEF ph\xE1p ng\u01B0\u1EDDi d\xF9ng nh\u1EADp. \u0110\u1ECBnh d\u1EA1ng \u0111\u1EA7u ra ph\u1EA3i ph\xF9 h\u1EE3p \u0111\u1EC3 xu\u1EA5t file Word \u0111\u1EB9p, r\xF5 r\xE0ng, kh\xF4ng l\u1ED7i font.
+  let duration = grade === 6 ? 60 : 90;
+  let totalQuestions = 37;
+  let structureGuideline = "";
+  let metaData = "";
+  let titleString = "";
+  if (testType === "15m") {
+    duration = 15;
+    totalQuestions = 20;
+    titleString = `ENGLISH TEST - GRADE ${grade}`;
+    structureGuideline = `C\u1EA4U TR\xDAC \u0110\u1EC0 B\u1EAET BU\u1ED8C (2 Ph\u1EA7n - \u0110\u1EC1 ki\u1EC3m tra 15 ph\xFAt):
+- Part I: Vocabulary (10 c\xE2u tr\u1EAFc nghi\u1EC7m). Ch\u1ECDn A, B, ho\u1EB7c C.
+- Part II: Grammar (10 c\xE2u tr\u1EAFc nghi\u1EC7m). Ch\u1ECDn A, B, ho\u1EB7c C.
+T\u1EA5t c\u1EA3 20 c\xE2u tr\u1EAFc nghi\u1EC7m \u0111\u1EC1u ch\u1EC9 c\xF3 T\u1ED0I \u0110A 3 \u0111\xE1p \xE1n: A, B, C. \u0110\xE1nh s\u1ED1 c\xE2u li\xEAn t\u1EE5c t\u1EEB 1 \u0111\u1EBFn 20. KH\xD4NG t\u1EA1o \u0111\xE1p \xE1n D.`;
+    metaData = `MA TR\u1EACN B\u1EAET BU\u1ED8C: T\u1EEB v\u1EF1ng 50%, Ng\u1EEF ph\xE1p 50%. M\u1EE9c \u0111\u1ED9: Bi\u1EBFt 50%, Hi\u1EC3u 30%, V\u1EADn d\u1EE5ng 20%.`;
+  } else if (testType === "midterm") {
+    duration = 60;
+    totalQuestions = 46;
+    titleString = `\u0110\u1EC0 KI\u1EC2M TRA \u0110\xC1NH GI\xC1 GI\u1EEEA H\u1ECCC K\xCC ${term?.includes("II") ? "II" : "I"} - TI\u1EBENG ANH L\u1EDAP ${grade}`;
+    structureGuideline = `C\u1EA4U TR\xDAC \u0110\u1EC0 B\u1EAET BU\u1ED8C (8 Ph\u1EA7n - 45 c\xE2u tr\u1EAFc nghi\u1EC7m + 1 b\xE0i vi\u1EBFt):
+- Part 1. Listen and decide if each statement is True (T) or False (F) (5 c\xE2u - t\u1EEB c\xE2u 1 \u0111\u1EBFn 5). Ch\u1EC9 d\xF9ng A. True v\xE0 B. False.
+- Part 2. Listen and circle the best answer A, B or C (5 c\xE2u - t\u1EEB c\xE2u 6 \u0111\u1EBFn 10).
+- Part 3. Choose the best answer A, B or C to complete the sentences (15 c\xE2u - t\u1EEB c\xE2u 11 \u0111\u1EBFn 25).
+- Part 4. Read the passage and choose the correct word A, B or C for each blank (5 c\xE2u - t\u1EEB c\xE2u 26 \u0111\u1EBFn 30).
+- Part 5. Read the passage and choose the best answer A, B or C (5 c\xE2u - t\u1EEB c\xE2u 31 \u0111\u1EBFn 35).
+- Part 6. Choose the sentence (A, B or C) that is correctly rearranged (5 c\xE2u - t\u1EEB c\xE2u 36 \u0111\u1EBFn 40).
+- Part 7. Choose the sentence that has the closest meaning to the root (5 c\xE2u - t\u1EEB c\xE2u 41 \u0111\u1EBFn 45).
+- Part 8. Write a short paragraph (50-60 words) (1 c\xE2u t\u1EF1 lu\u1EADn cu\u1ED1i c\xF9ng).
+
+T\u1EA5t c\u1EA3 c\xE2u tr\u1EAFc nghi\u1EC7m \u0111\u1EC1u ch\u1EC9 c\xF3 T\u1ED0I \u0110A 3 \u0111\xE1p \xE1n: A, B, C. \u0110\xE1nh s\u1ED1 c\xE2u li\xEAn t\u1EE5c t\u1EEB 1 \u0111\u1EBFn 45. C\xE2u Writing (Part 8) kh\xF4ng \u0111\xE1nh s\u1ED1 tr\u1EAFc nghi\u1EC7m. KH\xD4NG t\u1EA1o \u0111\xE1p \xE1n D.`;
+    metaData = `MA TR\u1EACN B\u1EAET BU\u1ED8C: Nghe 25%, \u0110\u1ECDc 25%, Ng\xF4n ng\u1EEF 30%, Vi\u1EBFt 20%. M\u1EE9c \u0111\u1ED9: Bi\u1EBFt 40%, Hi\u1EC3u 30%, V\u1EADn d\u1EE5ng 30%.`;
+  } else {
+    duration = 90;
+    totalQuestions = 37;
+    titleString = `\u0110\u1EC0 KI\u1EC2M TRA \u0110\xC1NH GI\xC1 CU\u1ED0I H\u1ECCC K\xCC ${term?.includes("II") ? "II" : "I"} - TI\u1EBENG ANH L\u1EDAP ${grade}`;
+    structureGuideline = `C\u1EA4U TR\xDAC \u0110\u1EC0 B\u1EAET BU\u1ED8C (8 Ph\u1EA7n - 36 c\xE2u tr\u1EAFc nghi\u1EC7m + 1 b\xE0i vi\u1EBFt):
+- Part 1. Listen and circle the best answer A, B, or C (5 c\xE2u - t\u1EEB c\xE2u 1 \u0111\u1EBFn 5).
+- Part 2. Listen and circle the best answer A or B (True/False) (5 c\xE2u - t\u1EEB c\xE2u 6 \u0111\u1EBFn 10). Ch\u1EC9 d\xF9ng A. True v\xE0 B. False.
+- Part 3. Choose A, B, or C to complete the following sentences (12 c\xE2u - t\u1EEB c\xE2u 11 \u0111\u1EBFn 22).
+- Part 4. Read and choose the best answer A, B or C to complete the passage (5 c\xE2u - t\u1EEB c\xE2u 23 \u0111\u1EBFn 27).
+- Part 5. Read the passage and choose the best answer A, B or C (5 c\xE2u - t\u1EEB c\xE2u 28 \u0111\u1EBFn 32).
+- Part 6. Sentence Transformation: Choose the correct sentence A, B or C (2 c\xE2u - c\xE2u 33 v\xE0 34).
+- Part 7. Word Order: Choose the correct sentence A, B or C (2 c\xE2u - c\xE2u 35 v\xE0 36).
+- Part 8. Writing: Write a paragraph (80-100 words) (1 c\xE2u t\u1EF1 lu\u1EADn cu\u1ED1i c\xF9ng).
+
+T\u1EA5t c\u1EA3 c\xE2u tr\u1EAFc nghi\u1EC7m \u0111\u1EC1u ch\u1EC9 c\xF3 T\u1ED0I \u0110A 3 \u0111\xE1p \xE1n: A, B, C. \u0110\xE1nh s\u1ED1 c\xE2u li\xEAn t\u1EE5c t\u1EEB 1 \u0111\u1EBFn 36. C\xE2u Writing (Part 8) kh\xF4ng \u0111\xE1nh s\u1ED1 tr\u1EAFc nghi\u1EC7m. KH\xD4NG t\u1EA1o \u0111\xE1p \xE1n D.`;
+    metaData = `MA TR\u1EACN B\u1EAET BU\u1ED8C: Nghe 25%, \u0110\u1ECDc 25%, Ng\xF4n ng\u1EEF 30%, Vi\u1EBFt 20%. M\u1EE9c \u0111\u1ED9: Bi\u1EBFt 40%, Hi\u1EC3u 30%, V\u1EADn d\u1EE5ng 30%.`;
+  }
+  return `B\u1EA1n l\xE0 tr\u1EE3 l\xFD t\u1EA1o \u0111\u1EC1 ki\u1EC3m tra m\xF4n Ti\u1EBFng Anh THCS. Nhi\u1EC7m v\u1EE5 c\u1EE7a b\u1EA1n l\xE0 t\u1EA1o \u0111\u1EC1 ki\u1EC3m tra ${testType === "15m" ? "15 ph\xFAt" : term || "gi\u1EEFa h\u1ECDc k\u1EF3"} cho l\u1EDBp ${grade} theo \u0111\xFAng m\u1EABu \u0111\xE3 n\u1EA1p. M\u1ED7i c\xE2u tr\u1EAFc nghi\u1EC7m ch\u1EC9 c\xF3 t\u1ED1i \u0111a 3 \u0111\xE1p \xE1n A, B, C. Kh\xF4ng bao gi\u1EDD t\u1EA1o \u0111\xE1p \xE1n D. D\u1EA1ng True/False ch\u1EC9 d\xF9ng A. True v\xE0 B. False. Ph\u1EA3i t\u1EA1o k\xE8m \u0111\xE1p \xE1n, ma tr\u1EADn v\xE0 \u0111\u1EB7c t\u1EA3. N\u1ED9i dung ph\u1EA3i b\xE1m l\u1EDBp ${grade}, h\u1ECDc k\u1EF3, unit, ch\u1EE7 \u0111\u1EC1, t\u1EEB v\u1EF1ng v\xE0 ng\u1EEF ph\xE1p ng\u01B0\u1EDDi d\xF9ng nh\u1EADp.
 
 Th\xF4ng tin b\xE0i ki\u1EC3m tra:
 - Kh\u1ED1i l\u1EDBp: L\u1EDBp ${grade}
 - H\u1ECDc k\u1EF3: ${term || "Gi\u1EEFa k\u1EF3 I"}
 - N\u0103m h\u1ECDc: ${academicYear || "2023-2024"}
-- Th\u1EDDi gian l\xE0m b\xE0i: ${grade === 6 ? 60 : 90} ph\xFAt
+- Th\u1EDDi gian l\xE0m b\xE0i: ${duration} ph\xFAt
 - C\xE1c Unit tr\u1ECDng t\xE2m:
 ${selectedUnitsInfo}
 - M\u1EE9c \u0111\u1ED9 kh\xF3: ${difficulty}
 ${customPrompt ? `- Y\xEAu c\u1EA7u b\u1ED5 sung: ${customPrompt}` : ""}
 
-C\u1EA4U TR\xDAC \u0110\u1EC0 B\u1EAET BU\u1ED8C (8 Ph\u1EA7n):
-- Part 1. Listening 1 (5 c\xE2u - 1.25\u0111): True/False ho\u1EB7c A/B/C.
-- Part 2. Listening 2 (5 c\xE2u - 1.25\u0111): Ch\u1ECDn A, B ho\u1EB7c C.
-- Part 3. Language Focus (12 c\xE2u - 3\u0111): Ch\u1ECDn A, B ho\u1EB7c C.
-- Part 4. Reading 1 (5 c\xE2u - 1.25\u0111): \u0110i\u1EC1n t\u1EEB v\xE0o ch\u1ED7 tr\u1ED1ng, ch\u1ECDn A, B ho\u1EB7c C. (\u0110o\u1EA1n 150-180 t\u1EEB)
-- Part 5. Reading 2 (5 c\xE2u - 1.25\u0111): \u0110\u1ECDc hi\u1EC3u ch\u1ECDn A, B ho\u1EB7c C. (\u0110o\u1EA1n 150-180 t\u1EEB)
-- Part 6. Sentence transformation / closest meaning (2 c\xE2u - 0.5\u0111): Ch\u1ECDn A, B ho\u1EB7c C.
-- Part 7. Reorder words/phrases (2 c\xE2u - 0.5\u0111): Ch\u1ECDn A, B ho\u1EB7c C.
-- Part 8. Writing (1 c\xE2u - 1\u0111): Vi\u1EBFt \u0111o\u1EA1n v\u0103n 80-100 t\u1EEB c\xF3 g\u1EE3i \xFD.
+${structureGuideline}
 
-MA TR\u1EACN B\u1EAET BU\u1ED8C: Nghe 25%, \u0110\u1ECDc 25%, Ng\xF4n ng\u1EEF 30%, Vi\u1EBFt 20%. M\u1EE9c \u0111\u1ED9: Bi\u1EBFt 40%, Hi\u1EC3u 30%, V\u1EADn d\u1EE5ng 30%.
-T\u1EA5t c\u1EA3 c\xE2u tr\u1EAFc nghi\u1EC7m \u0111\u1EC1u ch\u1EC9 c\xF3 T\u1ED0I \u0110A 3 \u0111\xE1p \xE1n: A, B, C. \u0110\xE1nh s\u1ED1 c\xE2u li\xEAn t\u1EE5c t\u1EEB 1 \u0111\u1EBFn 36. C\xE2u Writing l\xE0 ph\u1EA7n cu\u1ED1i, kh\xF4ng \u0111\xE1nh s\u1ED1 tr\u1EAFc nghi\u1EC7m.
-KH\xD4NG t\u1EA1o \u0111\xE1p \xE1n D.
+${metaData}
 
 \u0110\u1ECBnh d\u1EA1ng k\u1EBFt qu\u1EA3 tr\u1EA3 v\u1EC1 ph\u1EA3i l\xE0 m\u1ED9t JSON ho\xE0n h\u1EA3o tu\xE2n th\u1EE7 schema sau:
 {
-  "title": "T\xEAn \u0111\u1EC1 thi (v\xED d\u1EE5: \u0110\u1EC0 KI\u1EC2M TRA GI\u1EEEA H\u1ECCC K\xCC I - TI\u1EBENG ANH L\u1EDAP ${grade})",
+  "title": "${titleString}",
   "grade": ${grade},
   "term": "${term || "Gi\u1EEFa k\u1EF3 I"}",
   "academicYear": "${academicYear || "2023-2024"}",
   "testType": "${testType}",
-  "duration": ${grade === 6 ? 60 : 90},
-  "totalQuestions": 37,
+  "duration": ${duration},
+  "totalQuestions": ${totalQuestions},
   "parts": [
     {
-      "title": "T\xEAn ph\u1EA7n (v\xED d\u1EE5: Part 1. Listening 1)",
-      "instruction": "Y\xEAu c\u1EA7u c\u1EE7a ph\u1EA7n thi",
+      "title": "T\xEAn ph\u1EA7n (v\xED d\u1EE5: Part I: Vocabulary)",
+      "instruction": "Y\xEAu c\u1EA7u c\u1EE7a ph\u1EA7n thi (v\xED d\u1EE5: Choose the best answer A, B, or C...)",
       "questions": [
         {
           "id": "1",
@@ -343,10 +390,10 @@ KH\xD4NG t\u1EA1o \u0111\xE1p \xE1n D.
       ]
     }
   ],
-  "matrixData": "N\u1ED9i dung b\u1EA3ng ma tr\u1EADn chi ti\u1EBFt d\u01B0\u1EDBi d\u1EA1ng Markdown, kh\u1EDBp v\u1EDBi t\u1EC9 l\u1EC7 y\xEAu c\u1EA7u",
+  "matrixData": "N\u1ED9i dung b\u1EA3ng ma tr\u1EADn chi ti\u1EBFt d\u01B0\u1EDBi d\u1EA1ng Markdown",
   "specData": "N\u1ED9i dung b\u1EA3ng \u0111\u1EB7c t\u1EA3 chi ti\u1EBFt d\u01B0\u1EDBi d\u1EA1ng Markdown",
-  "transcripts": "N\u1ED9i dung transcript cho Part 1 v\xE0 Part 2",
-  "writingRubric": "G\u1EE3i \xFD b\xE0i vi\u1EBFt m\u1EABu 80-100 t\u1EEB v\xE0 Rubric ch\u1EA5m \u0111i\u1EC3m cho b\xE0i vi\u1EBFt"
+  "transcripts": "N\u1ED9i dung transcript ph\u1EA7n nghe (n\u1EBFu c\xF3)",
+  "writingRubric": "G\u1EE3i \xFD ch\u1EA5m \u0111i\u1EC3m ph\u1EA7n vi\u1EBFt (n\u1EBFu c\xF3)"
 }
 
 H\xE3y tr\u1EA3 v\u1EC1 duy nh\u1EA5t chu\u1ED7i JSON h\u1EE3p l\u1EC7. Kh\xF4ng bao g\u1ED3m b\u1EA5t k\u1EF3 ph\u1EA7n text gi\u1EDBi thi\u1EC7u hay d\u1EA5u nh\xE1y \`\`\`json \u1EDF ngo\xE0i.`;
@@ -389,6 +436,25 @@ async function callGeminiAI(prompt, customApiKey, selectedModel, modelIndex = 0)
       console.log(`Falling back to next model: ${MODELS[modelIndex + 1]}`);
       return callGeminiAI(prompt, customApiKey, void 0, modelIndex + 1);
     }
+    if (!customApiKey && (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === "MY_GEMINI_API_KEY")) {
+      console.log("Using Free Automatic API (Pollinations.ai) as fallback...");
+      try {
+        const fetchRes = await fetch("https://text.pollinations.ai/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [{ role: "user", content: prompt + "\n\nRETURN ONLY VALID JSON." }],
+            model: "openai",
+            jsonMode: true
+          })
+        });
+        const text = await fetchRes.text();
+        const parsed = JSON.parse(text.trim());
+        return { data: parsed, modelUsed: "pollinations-free-auto" };
+      } catch (e) {
+        console.error("Free API fallback failed:", e);
+      }
+    }
     throw error;
   }
 }
@@ -400,6 +466,10 @@ app.post("/api/generate-test", async (req, res) => {
   try {
     const prompt = createTestPrompt(grade, units, testType, difficulty, customPrompt, term, academicYear);
     const result = await callGeminiAI(prompt, apiKey, selectedModel);
+    if (result && typeof result === "object") {
+      result.units = units;
+      result.difficulty = difficulty;
+    }
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message || "\u0110\xE3 x\u1EA3y ra l\u1ED7i khi t\u1EA1o \u0111\u1EC1 thi b\u1EB1ng AI." });
@@ -417,6 +487,21 @@ H\xE3y tr\u1EA3 l\u1EDDi m\u1ED9t c\xE1ch l\u1ECBch s\u1EF1, d\u1EC5 hi\u1EC3u, 
 ${contextExam ? `Ng\u01B0\u1EDDi d\xF9ng \u0111ang xem \u0111\u1EC1 thi c\xF3 ti\xEAu \u0111\u1EC1 "${contextExam.title}". H\xE3y h\u1ED7 tr\u1EE3 h\u1ECD gi\u1EA3i th\xEDch ho\u1EB7c s\u1EEDa \u0111\u1ED5i \u0111\u1EC1 thi n\xE0y n\u1EBFu \u0111\u01B0\u1EE3c y\xEAu c\u1EA7u.` : ""}`;
     const keyToUse = apiKey || process.env.GEMINI_API_KEY;
     const modelToUse = selectedModel && MODELS.includes(selectedModel) ? selectedModel : "gemini-3.5-flash";
+    if (!keyToUse || keyToUse === "MY_GEMINI_API_KEY") {
+      const fetchRes = await fetch("https://text.pollinations.ai/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            { role: "system", content: systemInstruction },
+            { role: "user", content: message }
+          ],
+          model: "openai"
+        })
+      });
+      const text = await fetchRes.text();
+      return res.json({ text });
+    }
     const ai = new import_genai.GoogleGenAI({
       apiKey: keyToUse,
       httpOptions: {
@@ -507,5 +592,8 @@ async function startServer() {
     console.log(`[SmartTest Global Success] Server started at http://localhost:${PORT}`);
   });
 }
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
+var server_default = app;
 //# sourceMappingURL=server.cjs.map
