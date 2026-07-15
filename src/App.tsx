@@ -36,6 +36,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { Exam, Question, ExamPart, ExamHistory } from "./types";
 import { initialExams } from "./demoData";
 import { shuffleExam, exportToWord, exportAnswersToWord, exportMatrixToWord, exportSpecToWord, exportAllToZip } from "./utils";
+import { generateExamAI, chatWithTutorAI, analyzeMatrixAI } from "./services/ai";
+import { extractTextFromPDF, saveTextbookForGrade, getTextbookForGrade, deleteTextbookForGrade } from "./services/pdf";
 
 // Curriculum mapping for UI checkboxes
 const GLOBAL_SUCCESS_UNITS: Record<number, { id: number; title: string }[]> = {
@@ -99,7 +101,11 @@ const GLOBAL_SUCCESS_UNITS: Record<number, { id: number; title: string }[]> = {
 
 export default function App() {
   // Navigation & Core states
-  const [activeTab, setActiveTab] = useState<"create" | "repository" | "analytics" | "tutor">("create");
+  const [activeTab, setActiveTab] = useState<"create" | "repository" | "analytics" | "tutor" | "textbook">("create");
+  const [textbooks, setTextbooks] = useState<Record<number, any>>({});
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [pdfUploadGrade, setPdfUploadGrade] = useState<number>(6);
+
   const [exams, setExams] = useState<Exam[]>(() => {
     const saved = localStorage.getItem("smarttest_exams");
     return saved ? JSON.parse(saved) : initialExams;
@@ -258,45 +264,51 @@ export default function App() {
     }
   };
 
-  // Generate Exam using server API
+  // PDF Textbook Handling
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>, grade: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPdf(true);
+    showToast(`Đang trích xuất dữ liệu SGK Lớp ${grade} (Việc này có thể mất vài chục giây)...`, "info");
+    try {
+      const text = await extractTextFromPDF(file);
+      await saveTextbookForGrade(grade, text, file.name);
+      setTextbooks(prev => ({ ...prev, [grade]: { fileName: file.name, text, updatedAt: new Date().toISOString() } }));
+      showToast("Trích xuất và lưu SGK thành công!", "success");
+    } catch (err: any) {
+      showToast("Lỗi đọc PDF: " + err.message, "error");
+    } finally {
+      setUploadingPdf(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleDeletePdf = async (grade: number) => {
+    if (confirm(`Bạn có chắc chắn muốn xóa dữ liệu SGK Lớp ${grade} khỏi hệ thống?`)) {
+      await deleteTextbookForGrade(grade);
+      setTextbooks(prev => {
+        const newTbs = { ...prev };
+        delete newTbs[grade];
+        return newTbs;
+      });
+      showToast("Đã xóa dữ liệu SGK.", "success");
+    }
+  };
+
+  // Generate Exam using AI (Frontend)
   const handleGenerateExam = async () => {
     setIsGenerating(true);
     showToast("Đang kết nối Gemini AI để phân tích và biên soạn đề thi...", "info");
 
     try {
       const isUsingMatrixFile = !!matrixFileContent;
-      const endpoint = isUsingMatrixFile ? "/api/analyze-matrix" : "/api/generate-test";
-      const payload = isUsingMatrixFile ? {
-        fileName: matrixFileName,
-        fileContent: matrixFileContent,
-        grade: selectedGrade,
-        testType,
-        apiKey: customApiKey,
-        selectedModel
-      } : {
-        grade: selectedGrade,
-        units: selectedUnits,
-        testType,
-        difficulty,
-        customPrompt,
-        apiKey: customApiKey,
-        selectedModel,
-        term,
-        academicYear
-      };
-
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Không thể khởi tạo đề thi.");
+      let result;
+      if (isUsingMatrixFile) {
+        result = await analyzeMatrixAI(matrixFileName, matrixFileContent, selectedGrade, testType, customApiKey, selectedModel);
+      } else {
+        const pdfContext = textbooks[selectedGrade]?.text;
+        result = await generateExamAI(selectedGrade, selectedUnits, testType, difficulty, customPrompt, term, academicYear, pdfContext, customApiKey, selectedModel);
       }
-
-      const result = await res.json();
       const newExam: Exam = {
         ...result.data,
         id: `exam-${Date.now()}`,
@@ -404,24 +416,8 @@ export default function App() {
     setIsTutorLoading(true);
 
     try {
-      const res = await fetch("/api/chat-tutor", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: userMsg.text,
-          contextExam: currentExam,
-          apiKey: customApiKey,
-          selectedModel
-        })
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Không thể nhận phản hồi từ AI.");
-      }
-
-      const result = await res.json();
-      setTutorMessages(prev => [...prev, { role: "model", text: result.text }]);
+      const text = await chatWithTutorAI(userMsg.text, currentExam, customApiKey, selectedModel);
+      setTutorMessages(prev => [...prev, { role: "model", text }]);
     } catch (error: any) {
       showToast(error.message || "Gia sư AI bận đột xuất.", "error");
       setTutorMessages(prev => [...prev, { role: "model", text: `Đã xảy ra lỗi: ${error.message || "Không thể kết nối với máy chủ AI."}` }]);
@@ -663,6 +659,12 @@ export default function App() {
               >
                 💬 Gia Sư AI
               </button>
+              <button 
+                onClick={() => { setActiveTab("textbook"); setExamMode("none"); }}
+                className={`px-3 py-1.5 rounded-md transition-all ${activeTab === "textbook" ? "bg-white text-blue-600 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
+              >
+                📚 Sách Khoá
+              </button>
             </nav>
 
             {/* Config & Backups panel trigger */}
@@ -686,25 +688,7 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* API Key warning if missing and trying to generate */}
-        {!customApiKey && activeTab === "create" && (
-          <div className="no-print mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <h4 className="font-semibold text-amber-800 text-sm">Chưa cấu hình Gemini API Key</h4>
-                <p className="text-xs text-amber-700 mt-1">
-                  Hãy nhấp vào "Cài đặt" để lưu API Key. Bạn vẫn có thể trải nghiệm ngay tất cả tính năng của ứng dụng bằng cách xem, làm bài kiểm tra thử, hoặc xáo trộn <strong>các đề thi mẫu có sẵn</strong> trong "Kho Đề".
-                </p>
-              </div>
-            </div>
-            <button 
-              onClick={() => setShowSettingsModal(true)}
-              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition-colors flex-shrink-0 cursor-pointer"
-            >
-              Nhập API Key ngay
-            </button>
-          </div>
-        )}
+        
 
         {/* ACTIVE MODULE VIEW */}
         <div className="no-print">
