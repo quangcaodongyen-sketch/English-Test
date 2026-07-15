@@ -1,0 +1,6 @@
+{
+  "name": "SmartTest Global Success",
+  "description": "Ứng dụng AI hỗ trợ giáo viên THCS biên soạn đề kiểm tra Tiếng Anh bám sát chương trình Global Success lớp 6-9, giải thích đáp án chi tiết và hỗ trợ xuất đề.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
