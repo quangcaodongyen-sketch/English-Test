@@ -3,6 +3,21 @@ import { createTestPrompt } from "./promptGenerator";
 
 const MODELS = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.1-pro-preview", "gemini-2.5-flash"];
 
+function safeParseJSON(text: string): any {
+  let cleanText = text.trim();
+  // Strip markdown code block wrappers if they exist
+  if (cleanText.startsWith("```")) {
+    cleanText = cleanText.replace(/^```(?:json)?\r?\n/, "").replace(/\r?\n```$/, "");
+  }
+  // Isolate first { and last } brace
+  const firstBrace = cleanText.indexOf("{");
+  const lastBrace = cleanText.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1) {
+    cleanText = cleanText.substring(firstBrace, lastBrace + 1);
+  }
+  return JSON.parse(cleanText);
+}
+
 /**
  * Calls Gemini directly from the browser, bypassing Vercel Serverless Function limits (10s).
  * If no API key is provided, it automatically falls back to Pollinations API (Free, no key needed).
@@ -47,7 +62,7 @@ export async function generateExamAI(
       const responseText = response.text;
       if (!responseText) throw new Error("Mô hình Gemini không trả về dữ liệu.");
       
-      const parsed = JSON.parse(responseText.trim());
+      const parsed = safeParseJSON(responseText);
       return { data: parsed, modelUsed: modelToUse };
     } 
     
@@ -64,7 +79,7 @@ export async function generateExamAI(
     });
     
     const text = await fetchRes.text();
-    const parsed = JSON.parse(text.trim());
+    const parsed = safeParseJSON(text);
     return { data: parsed, modelUsed: "pollinations-free-auto" };
 
   } catch (error: any) {
@@ -199,7 +214,7 @@ Trả về duy nhất JSON hợp lệ, không chứa ký tự markdown hay văn 
       });
       const responseText = response.text;
       if (!responseText) throw new Error("Mô hình Gemini không trả về dữ liệu.");
-      return { data: JSON.parse(responseText.trim()), modelUsed: modelToUse };
+      return { data: safeParseJSON(responseText), modelUsed: modelToUse };
     }
 
     const fetchRes = await fetch("https://text.pollinations.ai/", {
@@ -213,7 +228,7 @@ Trả về duy nhất JSON hợp lệ, không chứa ký tự markdown hay văn 
     });
     
     const text = await fetchRes.text();
-    return { data: JSON.parse(text.trim()), modelUsed: "pollinations-free-auto" };
+    return { data: safeParseJSON(text), modelUsed: "pollinations-free-auto" };
   } catch (error: any) {
     console.error("Error calling AI:", error);
     throw new Error(error.message || "Đã xảy ra lỗi khi phân tích file bằng AI.");

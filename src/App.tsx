@@ -646,8 +646,9 @@ export default function App() {
         result = await generateExamAI(selectedGrade, selectedUnits, testType, difficulty, customPrompt, term, academicYear, pdfContext || undefined, customApiKey, selectedModel);
       }
 
+      const examData = result.data || result;
       const newExam: Exam = {
-        ...result,
+        ...examData,
         id: `exam-${Date.now()}`,
         grade: selectedGrade,
         units: selectedUnits,
