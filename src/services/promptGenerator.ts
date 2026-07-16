@@ -63,9 +63,9 @@ Tất cả câu trắc nghiệm đều chỉ có TỐI ĐA 3 đáp án: A, B, C.
     metaData = `MA TRẠN BẮT BUỘC: Nghe 25% (2.5 điểm), Đọc 25% (2.5 điểm), Ngôn ngữ 30% (3.0 điểm), Viết 20% (1.0 điểm viết lại/sắp xếp + 1.0 điểm viết đoạn văn = 2.0 điểm). Tổng điểm bài kiểm tra trên giấy là 10.0 điểm (36 câu trắc nghiệm x 0.25 điểm + 1 câu viết tự luận x 1.0 điểm). Mức độ: Biết 40%, Hiểu 30%, Vận dụng 30%.`;
   } else {
     // Final term
-    totalQuestions = 37;
+    totalQuestions = 38;
     titleString = `ĐỀ KIỂM TRA ĐÁNH GIÁ ${displayTerm.toUpperCase()} - TIẾNG ANH LỚP ${grade}`;
-    structureGuideline = `CẤU TRÚC ĐỀ BẮT BUỘC (8 Phần - 36 câu trắc nghiệm + 1 bài viết):
+    structureGuideline = `CẤU TRÚC ĐỀ BẮT BUỘC (9 Phần - 36 câu trắc nghiệm + 1 bài viết + 1 bài nói):
 - Part 1. Listening - Monologue (Độc thoại): Listen and decide if each statement is True (T) or False (F) (5 câu - từ câu 1 đến 5). Chỉ dùng A. True và B. False.
 - Part 2. Listening - Dialogue (Đối thoại Nam/Nữ): Listen and circle the best answer A, B, or C (5 câu - từ câu 6 đến 10).
 - Part 3. Choose A, B, or C to complete the following sentences (12 câu - từ câu 11 đến 22).
@@ -73,10 +73,14 @@ Tất cả câu trắc nghiệm đều chỉ có TỐI ĐA 3 đáp án: A, B, C.
 - Part 5. Read the passage and choose the best answer A, B or C (5 câu - từ câu 28 đến 32). Phải viết văn bản đọc hiểu (Reading Passage) đầy đủ vào phần instruction của Part này.
 - Part 6. Sentence Transformation: Choose the correct sentence A, B or C (2 câu - câu 33 và 34).
 - Part 7. Word Order: Choose the correct sentence A, B or C (2 câu - câu 35 và 36).
-- Part 8. Writing: Write a paragraph (80-100 words) (1 câu tự luận cuối cùng).
+- Part 8. Writing: Write a paragraph (80-100 words) (1 câu tự luận).
+- Part 9. Speaking: Speaking Topics (2.0 points). Cho học sinh chọn 1 trong các chủ đề dưới đây để nói trong 1-2 phút (1 câu tự luận ghi rõ: "Please choose one of the topics below and talk about it in 1-2 minutes.").
 
-Tất cả câu trắc nghiệm đều chỉ có TỐI ĐA 3 đáp án: A, B, C. Đánh số câu liên tục từ 1 đến 36. Câu Writing (Part 8) không đánh số trắc nghiệm. KHÔNG tạo đáp án D.`;
-    metaData = `MA TRẠN BẮT BUỘC: Nghe 20% (2.0 điểm), Đọc 20% (2.0 điểm), Ngôn ngữ 24% (2.4 điểm), Viết 16% (0.8 điểm viết lại/sắp xếp + 0.8 điểm viết đoạn văn = 1.6 điểm), Nói (Speaking) 20% (2.0 điểm). Tổng điểm bài viết trên giấy là 8.0 điểm (36 câu trắc nghiệm x 0.2 điểm + 1 câu tự luận x 0.8 điểm), bài nói 2.0 điểm. Mức độ: Biết 40%, Hiểu 30%, Vận dụng 30%.`;
+ĐẶC BIỆT LƯU Ý PHẦN NÓI (PART 9 SPEAKING):
+- Trong đề bài (Part 9), chỉ liệt kê tên các chủ đề nói (ví dụ: Topic 1, Topic 2).
+- Toàn bộ Câu hỏi nói chi tiết (Speaking prompts) và Gợi ý trả lời/bài nói mẫu (Suggested responses/sample monologues) của giáo viên PHẢI được đặt ở trường "writingRubric" ở cuối cùng của JSON kết quả, nằm bên dưới phần hướng dẫn chấm viết và tiêu đề rõ ràng: "=== HƯỚNG DẪN CHẤM BÀI NÓI (SPEAKING) (2.0 ĐIỂM) ===".
+- Tất cả câu trắc nghiệm đều chỉ có TỐI ĐA 3 đáp án: A, B, C. Đánh số câu liên tục từ 1 đến 36. Câu Writing (Part 8) và Speaking (Part 9) không đánh số trắc nghiệm. KHÔNG tạo đáp án D.`;
+    metaData = `MA TRẠN BẮT BUỘC: Nghe 20% (2.0 điểm), Đọc 20% (2.0 điểm), Ngôn ngữ 24% (2.4 điểm), Viết 16% (0.8 điểm viết lại/sắp xếp + 0.8 điểm viết đoạn văn = 1.6 điểm), Nói (Speaking) 20% (2.0 điểm). Tổng điểm phần viết làm trên giấy kiểm tra là 8.0 điểm (36 câu trắc nghiệm x 0.2 điểm + 1 câu tự luận viết x 0.8 điểm), bài nói trực tiếp 2.0 điểm. Mức độ: Biết 40%, Hiểu 30%, Vận dụng 30%.`;
   }
 
   return `Bạn là trợ lý tạo đề kiểm tra môn Tiếng Anh THCS. Nhiệm vụ của bạn là tạo đề kiểm tra ${testType === "15m" ? "15 phút" : (term || "giữa học kỳ")} cho lớp ${grade} theo đúng mẫu đã nạp. Mỗi câu trắc nghiệm chỉ có tối đa 3 đáp án A, B, C. Không bao giờ tạo đáp án D. Dạng True/False chỉ dùng A. True và B. False. Phải tạo kèm đáp án, ma trận và đặc tả. Nội dung phải bám lớp ${grade}, học kỳ, unit, chủ đề, từ vựng và ngữ pháp người dùng nhập.
@@ -132,7 +136,7 @@ YÊU CẦU BẮT BUỘC VỀ NỘI DUNG:
   "matrixData": "Nội dung bảng ma trận chi tiết dưới dạng Markdown",
   "specData": "Nội dung bảng đặc tả chi tiết dưới dạng Markdown",
   "transcripts": "Nội dung lời thoại (Audio Transcript) chi tiết cho cả 2 bài nghe (Độc thoại True/False và Đối thoại Nam/Nữ)",
-  "writingRubric": "Gợi ý chấm điểm phần viết chi tiết kèm bài mẫu tham khảo"
+  "writingRubric": "Hướng dẫn chấm điểm phần viết tự luận (kèm bài mẫu) VÀ đáp án/gợi ý chấm bài nói Speaking (bao gồm câu hỏi phỏng vấn nói chi tiết và bài mẫu nói mẫu tham khảo)"
 }
 
 Hãy trả về duy nhất chuỗi JSON hợp lệ. Không bao gồm bất kỳ phần text giới thiệu hay dấu nháy \`\`\`json ở ngoài.`;

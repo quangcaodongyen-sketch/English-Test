@@ -38,6 +38,38 @@ export interface Exam {
   writingRubric?: string;
 }
 
+export interface User {
+  id: string;
+  role: "teacher" | "student" | "admin";
+  fullName: string;
+  school: string;
+  gradeClass?: string; // only for students
+  username: string;
+  password?: string;
+  isVip: boolean;
+  vipUntil?: string;
+  createdAt: string;
+}
+
+export interface StudentResult {
+  studentId: string;
+  studentName: string;
+  gradeClass?: string;
+  score: number;
+  correctCount: number;
+  totalQuestions: number;
+  takenAt: string;
+}
+
+export interface AssignedExam {
+  id: string; // Assignment ID code (e.g. "TEST-1234")
+  examId: string;
+  examTitle: string;
+  teacherId: string;
+  assignedAt: string;
+  results: StudentResult[];
+}
+
 export interface ExamHistory {
   id: string;
   examId: string;
@@ -54,6 +86,9 @@ export interface ExamHistory {
 export interface AppState {
   savedExams: Exam[];
   history: ExamHistory[];
+  users: User[];
+  currentUser: User | null;
+  assignedExams: AssignedExam[];
   settings: {
     theme: "light" | "dark";
     autoSave: boolean;

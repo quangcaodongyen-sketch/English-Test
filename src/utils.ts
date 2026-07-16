@@ -223,8 +223,8 @@ function getOfficialHeader(exam: Exam) {
   <table class="header-table">
     <tr>
       <td class="col-left">
-        <div class="org-name">${exam.orgName || "SỞ GIÁO DỤC VÀ ĐÀO TẠO ................."}</div>
-        <div class="school-name">${exam.schoolName || "TRƯỜNG THCS ........................................"}</div>
+        <div class="org-name">${exam.orgName || "UBND XÃ ĐỒNG YÊN"}</div>
+        <div class="school-name">${exam.schoolName || "Trường THCS Đồng Yên"}</div>
         <span class="underline-short"></span>
       </td>
       <td class="col-right">
@@ -272,12 +272,14 @@ function getExamBody(exam: Exam) {
   return exam.parts.map(part => {
     const questionsHtml = part.questions.map(q => {
       if (q.options.length === 0) {
-        // Writing question
-        const lines = Array.from({ length: 8 }, () => `<div class="writing-line"></div>`).join("");
+        // Writing question (with dots for students to write in Word)
+        const dots = Array.from({ length: 8 }, () => `....................................................................................................................................................................`).join("<br/>");
         return `
-          <div class="question">
-            <div class="question-text">${q.questionText}</div>
-            <div class="writing-area">${lines}</div>
+          <div class="question" style="margin-top: 10pt; margin-bottom: 15pt;">
+            <div class="question-text" style="font-weight: bold; margin-bottom: 6pt;">${q.questionText}</div>
+            <div style="line-height: 2.0; font-family: 'Times New Roman'; font-size: 12pt; color: #555;">
+              ${dots}
+            </div>
           </div>`;
       }
       // MCQ question
@@ -330,7 +332,7 @@ function getAnswerSheet(exam: Exam) {
 
   let html = `
     <div style="text-align:center; margin-bottom:15pt;">
-      <div class="school-name">${exam.schoolName || "TRƯỜNG THCS ĐỒNG YÊN"}</div>
+      <div class="school-name">${exam.schoolName || "Trường THCS Đồng Yên"}</div>
       <div style="font-size:14pt; font-weight:bold; text-transform:uppercase; margin-top:10pt;">HƯỚNG DẪN CHẤM VÀ ĐÁP ÁN</div>
       <div style="font-size:13pt; margin-top:4pt;">${exam.title}</div>
       <div style="font-size:12pt;">Môn: ${exam.subject || "Tiếng Anh"} – Lớp: ${exam.grade} – Năm học: ${exam.academicYear || "2024-2025"}</div>
@@ -346,7 +348,7 @@ function getAnswerSheet(exam: Exam) {
 
   if (exam.writingRubric) {
     html += `
-      <div style="font-weight:bold; margin-top:15pt;">${exam.transcripts ? 'III' : 'II'}. HƯỚNG DẪN CHẤM PHẦN VIẾT</div>
+      <div style="font-weight:bold; margin-top:15pt;">${exam.transcripts ? 'III' : 'II'}. HƯỚNG DẪN CHẤM PHẦN VIẾT & PHẦN NÓI (SPEAKING)</div>
       <div style="white-space: pre-wrap; font-size:12pt;">${exam.writingRubric}</div>`;
   }
 
@@ -368,7 +370,7 @@ function markdownToHtml(md: string): string {
   
   const flushTable = () => {
     if (tableRows.length > 0) {
-      resultLines.push('<table class="matrix-table">');
+      resultLines.push('<table class="matrix-table" border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse; width:100%; border:1pt solid #000; font-family:\'Times New Roman\';">');
       resultLines.push(tableRows.join("\n"));
       resultLines.push('</table>');
       tableRows = [];
@@ -448,19 +450,49 @@ export function exportAnswersToWord(exam: Exam) {
 
 export function exportMatrixToWord(exam: Exam) {
   const content = exam.matrixData ? markdownToHtml(exam.matrixData) : "<p><em>Chưa có ma trận</em></p>";
-  const html = BGDDT_DOC_START
-    + `<div style="text-align:center; font-weight:bold; font-size:14pt; text-transform:uppercase; margin-bottom:15pt;">MA TRẬN ĐỀ KIỂM TRA</div>`
-    + `<div style="text-align:center; margin-bottom:10pt;">${exam.title}<br/>Môn: ${exam.subject || "Tiếng Anh"} – Lớp: ${exam.grade}</div>`
-    + content + BGDDT_DOC_END;
+  const headerHtml = `
+  <table class="header-table">
+    <tr>
+      <td class="col-left">
+        <div class="org-name">${exam.orgName || "UBND XÃ ĐỒNG YÊN"}</div>
+        <div class="school-name">${exam.schoolName || "Trường THCS Đồng Yên"}</div>
+        <span class="underline-short"></span>
+      </td>
+      <td class="col-right">
+        <div class="exam-title">MA TRẬN ĐỀ KIỂM TRA ĐÁNH GIÁ ${exam.term ? exam.term.toUpperCase() : "GIỮA HỌC KỲ I"}</div>
+        <div class="exam-meta" style="margin-top: 4pt;">
+          Môn: ${exam.subject || "TIẾNG ANH"} – Lớp: ${exam.grade}<br/>
+          Năm học: ${exam.academicYear || "2024-2025"}
+        </div>
+      </td>
+    </tr>
+  </table>
+  <br/>`;
+  const html = BGDDT_DOC_START + headerHtml + content + BGDDT_DOC_END;
   downloadDocFile(html, `Ma_Tran_${exam.title.replace(/\s+/g, "_")}.doc`);
 }
 
 export function exportSpecToWord(exam: Exam) {
   const content = exam.specData ? markdownToHtml(exam.specData) : "<p><em>Chưa có bản đặc tả</em></p>";
-  const html = BGDDT_DOC_START
-    + `<div style="text-align:center; font-weight:bold; font-size:14pt; text-transform:uppercase; margin-bottom:15pt;">BẢN ĐẶC TẢ ĐỀ KIỂM TRA</div>`
-    + `<div style="text-align:center; margin-bottom:10pt;">${exam.title}<br/>Môn: ${exam.subject || "Tiếng Anh"} – Lớp: ${exam.grade}</div>`
-    + content + BGDDT_DOC_END;
+  const headerHtml = `
+  <table class="header-table">
+    <tr>
+      <td class="col-left">
+        <div class="org-name">${exam.orgName || "UBND XÃ ĐỒNG YÊN"}</div>
+        <div class="school-name">${exam.schoolName || "Trường THCS Đồng Yên"}</div>
+        <span class="underline-short"></span>
+      </td>
+      <td class="col-right">
+        <div class="exam-title">BẢN ĐẶC TẢ ĐỀ KIỂM TRA ĐÁNH GIÁ ${exam.term ? exam.term.toUpperCase() : "GIỮA HỌC KỲ I"}</div>
+        <div class="exam-meta" style="margin-top: 4pt;">
+          Môn: ${exam.subject || "TIẾNG ANH"} – Lớp: ${exam.grade}<br/>
+          Năm học: ${exam.academicYear || "2024-2025"}
+        </div>
+      </td>
+    </tr>
+  </table>
+  <br/>`;
+  const html = BGDDT_DOC_START + headerHtml + content + BGDDT_DOC_END;
   downloadDocFile(html, `Dac_Ta_${exam.title.replace(/\s+/g, "_")}.doc`);
 }
 
@@ -470,14 +502,48 @@ export async function exportAllToZip(exam: Exam) {
   const testHtml = BGDDT_DOC_START + getOfficialHeader(exam) + getStudentInfoBlock() + getExamBody(exam)
     + `<div class="footer-note">--- Hết ---</div>` + BGDDT_DOC_END;
   const answersHtml = BGDDT_DOC_START + getAnswerSheet(exam) + BGDDT_DOC_END;
+  
   const matrixContent = exam.matrixData ? markdownToHtml(exam.matrixData) : "<p><em>Chưa có ma trận</em></p>";
-  const matrixHtml = BGDDT_DOC_START
-    + `<div style="text-align:center; font-weight:bold; font-size:14pt; text-transform:uppercase; margin-bottom:15pt;">MA TRẬN ĐỀ KIỂM TRA</div>`
-    + matrixContent + BGDDT_DOC_END;
+  const matrixHeaderHtml = `
+  <table class="header-table">
+    <tr>
+      <td class="col-left">
+        <div class="org-name">${exam.orgName || "UBND XÃ ĐỒNG YÊN"}</div>
+        <div class="school-name">${exam.schoolName || "Trường THCS Đồng Yên"}</div>
+        <span class="underline-short"></span>
+      </td>
+      <td class="col-right">
+        <div class="exam-title">MA TRẬN ĐỀ KIỂM TRA ĐÁNH GIÁ ${exam.term ? exam.term.toUpperCase() : "GIỮA HỌC KỲ I"}</div>
+        <div class="exam-meta" style="margin-top: 4pt;">
+          Môn: ${exam.subject || "TIẾNG ANH"} – Lớp: ${exam.grade}<br/>
+          Năm học: ${exam.academicYear || "2024-2025"}
+        </div>
+      </td>
+    </tr>
+  </table>
+  <br/>`;
+  const matrixHtml = BGDDT_DOC_START + matrixHeaderHtml + matrixContent + BGDDT_DOC_END;
+
   const specContent = exam.specData ? markdownToHtml(exam.specData) : "<p><em>Chưa có bản đặc tả</em></p>";
-  const specHtml = BGDDT_DOC_START
-    + `<div style="text-align:center; font-weight:bold; font-size:14pt; text-transform:uppercase; margin-bottom:15pt;">BẢN ĐẶC TẢ ĐỀ KIỂM TRA</div>`
-    + specContent + BGDDT_DOC_END;
+  const specHeaderHtml = `
+  <table class="header-table">
+    <tr>
+      <td class="col-left">
+        <div class="org-name">${exam.orgName || "UBND XÃ ĐỒNG YÊN"}</div>
+        <div class="school-name">${exam.schoolName || "Trường THCS Đồng Yên"}</div>
+        <span class="underline-short"></span>
+      </td>
+      <td class="col-right">
+        <div class="exam-title">BẢN ĐẶC TẢ ĐỀ KIỂM TRA ĐÁNH GIÁ ${exam.term ? exam.term.toUpperCase() : "GIỮA HỌC KỲ I"}</div>
+        <div class="exam-meta" style="margin-top: 4pt;">
+          Môn: ${exam.subject || "TIẾNG ANH"} – Lớp: ${exam.grade}<br/>
+          Năm học: ${exam.academicYear || "2024-2025"}
+        </div>
+      </td>
+    </tr>
+  </table>
+  <br/>`;
+  const specHtml = BGDDT_DOC_START + specHeaderHtml + specContent + BGDDT_DOC_END;
 
   const safeName = exam.title.replace(/\s+/g, "_");
   zip.file(`De_Thi_${safeName}.doc`, testHtml);
