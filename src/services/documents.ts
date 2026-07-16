@@ -1,5 +1,6 @@
 import * as pdfjsLib from "pdfjs-dist";
 import localforage from "localforage";
+import { TEXTBOOK_CONTENT } from "./textbookContent";
 
 // Initialize pdf.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -180,11 +181,38 @@ export async function deleteDocumentsByFilter(category: DocCategory, grade: numb
  * Builds a combined knowledge context string from textbook + other docs for a grade.
  * This is fed into AI prompts for accurate question generation.
  */
-export async function buildKnowledgeContext(grade: number, units?: number[]): Promise<string> {
-  const docs = await getDocuments(undefined, grade);
-  if (docs.length === 0) return "";
-
+export async function buildKnowledgeContext(grade: number, units?: number[], skipUploadedDocs = false): Promise<string> {
   const sections: string[] = [];
+
+  // Add built-in textbook content for selected units if available
+  if (units && units.length > 0) {
+    const textbookSections: string[] = [];
+    for (const unit of units) {
+      const content = TEXTBOOK_CONTENT[grade]?.[unit];
+      if (content) {
+        let uContent = `--- Unit ${unit}: ${TEXTBOOK_CONTENT[grade]?.[unit]?.readingPassage ? "Available" : "No details"}`;
+        if (content.dialogue) {
+          uContent += `\n[Getting Started Dialogue - Audio Transcript]\n${content.dialogue}`;
+        }
+        if (content.readingPassage) {
+          uContent += `\n[Skills 1 Reading Passage]\n${content.readingPassage}`;
+        }
+        textbookSections.push(uContent);
+      }
+    }
+    if (textbookSections.length > 0) {
+      sections.push(`[SÁCH GIÁO KHOA LỚP ${grade} - KIẾN THỨC CHUẨN CHƯƠNG TRÌNH GLOBAL SUCCESS]\n${textbookSections.join("\n\n")}`);
+    }
+  }
+
+  if (skipUploadedDocs) {
+    return sections.join("\n\n");
+  }
+
+  const docs = await getDocuments(undefined, grade);
+  if (docs.length === 0) {
+    return sections.join("\n\n");
+  }
 
   const textbooks = docs.filter(d => d.category === "textbook");
   if (textbooks.length > 0) {

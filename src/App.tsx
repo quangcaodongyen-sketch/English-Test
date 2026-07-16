@@ -126,15 +126,31 @@ export default function App() {
 
   // Form Generator parameters
   const [selectedGrade, setSelectedGrade] = useState<number>(6);
-  const [selectedUnits, setSelectedUnits] = useState<number[]>([1, 2]);
-  const [testType, setTestType] = useState<string>("midterm");
+  const [selectedUnits, setSelectedUnits] = useState<number[]>([1, 2, 3]);
+  const [testType, setTestType] = useState<string>("midterm1");
   const [difficulty, setDifficulty] = useState<string>("Medium");
   const [customPrompt, setCustomPrompt] = useState<string>("");
-  const [term, setTerm] = useState<string>("Giữa kỳ I");
+  const [term, setTerm] = useState<string>("Giữa học kỳ I");
   const [academicYear, setAcademicYear] = useState<string>(`${new Date().getFullYear()}-${new Date().getFullYear() + 1}`);
   const [isGenerating, setIsGenerating] = useState(false);
   const [matrixFileContent, setMatrixFileContent] = useState<string>("");
   const [matrixFileName, setMatrixFileName] = useState<string>("");
+  const [generationMode, setGenerationMode] = useState<"new" | "reference">("new");
+
+  // Auto-manage unit checklist based on selected testType
+  useEffect(() => {
+    if (testType === "15m") {
+      setSelectedUnits([1]);
+    } else if (testType === "midterm1") {
+      setSelectedUnits([1, 2, 3]);
+    } else if (testType === "finalterm1") {
+      setSelectedUnits([1, 2, 3, 4, 5, 6]);
+    } else if (testType === "midterm2") {
+      setSelectedUnits([7, 8, 9]);
+    } else if (testType === "finalterm2") {
+      setSelectedUnits([7, 8, 9, 10, 11, 12]);
+    }
+  }, [testType]);
 
   // Exam viewer/testing mode states
   const [currentExam, setCurrentExam] = useState<Exam | null>(null);
@@ -322,7 +338,7 @@ export default function App() {
       if (isUsingMatrixFile) {
         result = await analyzeMatrixAI(matrixFileName, matrixFileContent, selectedGrade, testType, customApiKey, selectedModel);
       } else {
-        const pdfContext = await buildKnowledgeContext(selectedGrade, selectedUnits);
+        const pdfContext = await buildKnowledgeContext(selectedGrade, selectedUnits, generationMode === "new");
         result = await generateExamAI(selectedGrade, selectedUnits, testType, difficulty, customPrompt, term, academicYear, pdfContext || undefined, customApiKey, selectedModel);
       }
       const newExam: Exam = {
@@ -442,12 +458,6 @@ export default function App() {
     }
   };
 
-  // Trigger quick question to Tutor from question explanation
-  const askTutorAboutQuestion = (qText: string) => {
-    setActiveTab("tutor");
-    setTutorInput(`Hãy giải thích kỹ hơn câu hỏi này và chỉ ra các từ mới bổ sung nhé:\n"${qText}"`);
-    showToast("Đã chuyển câu hỏi vào khung chat AI Tutor!", "success");
-  };
 
   // Export database backup
   const handleExportBackup = () => {
@@ -550,12 +560,16 @@ export default function App() {
     let detectedType = "";
     if (mcqCount === 20 && writingCount === 0) {
       detectedType = "15m";
-    } else if (mcqCount === 45 && writingCount === 1) {
-      detectedType = "midterm";
     } else if (mcqCount === 36 && writingCount === 1) {
-      detectedType = "finalterm";
+      const tType = (exam.testType || "").toLowerCase();
+      if (tType.includes("mid")) {
+        detectedType = "midterm";
+      } else if (tType.includes("final")) {
+        detectedType = "finalterm";
+      } else {
+        detectedType = "midterm";
+      }
     } else {
-      // If count doesn't match perfectly, fallback to exam.testType check
       const tType = (exam.testType || "").toLowerCase();
       if (tType.includes("15m") || tType === "15") {
         detectedType = "15m";
@@ -570,7 +584,7 @@ export default function App() {
       if (mcqCount !== 20) return `Số câu trắc nghiệm không đúng cho đề 15 phút (Hiện tại: ${mcqCount}, Yêu cầu: 20)`;
       if (writingCount !== 0) return `Đề 15 phút không được có câu tự luận (Hiện tại: ${writingCount})`;
     } else if (detectedType === "midterm") {
-      if (mcqCount !== 45) return `Số câu trắc nghiệm không đúng cho đề Giữa kỳ (Hiện tại: ${mcqCount}, Yêu cầu: 45)`;
+      if (mcqCount !== 36) return `Số câu trắc nghiệm không đúng cho đề Giữa kỳ (Hiện tại: ${mcqCount}, Yêu cầu: 36)`;
       if (writingCount !== 1) return `Số câu tự luận không đúng cho đề Giữa kỳ (Hiện tại: ${writingCount}, Yêu cầu: 1)`;
     } else if (detectedType === "finalterm") {
       if (mcqCount !== 36) return `Số câu trắc nghiệm không đúng cho đề Cuối kỳ (Hiện tại: ${mcqCount}, Yêu cầu: 36)`;
@@ -587,8 +601,7 @@ export default function App() {
     if (!currentExam) return;
     const errorMsg = validateExamBeforeExport(currentExam);
     if (errorMsg) {
-      showToast(`Không thể xuất file: ${errorMsg}`, "error");
-      return;
+      showToast(`Cảnh báo định dạng đề: ${errorMsg}`, "info");
     }
 
     try {
@@ -663,39 +676,7 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-            {/* Quick Navigation Tabs */}
-            <nav className="flex bg-slate-100 p-1 rounded-lg gap-1 text-sm font-medium mr-2">
-              <button 
-                onClick={() => { setActiveTab("create"); setExamMode("none"); }}
-                className={`px-3 py-1.5 rounded-md transition-all ${activeTab === "create" ? "bg-white text-blue-600 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
-              >
-                🚀 Tạo Đề Mới
-              </button>
-              <button 
-                onClick={() => { setActiveTab("repository"); setExamMode("none"); }}
-                className={`px-3 py-1.5 rounded-md transition-all ${activeTab === "repository" ? "bg-white text-blue-600 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
-              >
-                🗃️ Kho Đề ({exams.length})
-              </button>
-              <button 
-                onClick={() => { setActiveTab("analytics"); setExamMode("none"); }}
-                className={`px-3 py-1.5 rounded-md transition-all ${activeTab === "analytics" ? "bg-white text-blue-600 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
-              >
-                📈 Tiến Trình
-              </button>
-              <button 
-                onClick={() => { setActiveTab("tutor"); setExamMode("none"); }}
-                className={`px-3 py-1.5 rounded-md transition-all ${activeTab === "tutor" ? "bg-white text-blue-600 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
-              >
-                💬 Gia Sư AI
-              </button>
-              <button 
-                onClick={() => { setActiveTab("resources"); setExamMode("none"); }}
-                className={`px-3 py-1.5 rounded-md transition-all ${activeTab === "resources" ? "bg-white text-blue-600 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
-              >
-                📚 Ngân Hàng
-              </button>
-            </nav>
+
 
             {/* Config & Backups panel trigger */}
             <button
@@ -724,7 +705,8 @@ export default function App() {
         <div className="no-print">
           {/* TAB 1: AI GENERATOR FORM */}
           {activeTab === "create" && examMode === "none" && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               
               {/* Creator Options */}
               <div className="lg:col-span-2 space-y-6">
@@ -793,49 +775,15 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Reference documents for current grade */}
+                  {/* Reference documents status info */}
                   <div className="mb-6 border-t border-slate-100 pt-6">
-                    <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <FolderOpen className="w-4 h-4 text-emerald-600" />
-                        Tài liệu tham khảo sử dụng (Khối lớp {selectedGrade}):
-                      </span>
-                      <button 
-                        onClick={() => setActiveTab("resources")} 
-                        className="text-xs text-blue-600 hover:underline font-bold cursor-pointer"
-                      >
-                        + Quản lý tài liệu
-                      </button>
-                    </label>
-                    
-                    {uploadedDocs.filter(d => d.grade === selectedGrade).length === 0 ? (
-                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 border-dashed text-xs text-slate-500 italic flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                        <span>Chưa có tài liệu tham khảo nào được tải lên cho Khối lớp {selectedGrade}. AI sẽ tự động sinh đề bằng kiến thức SGK Global Success mặc định.</span>
-                        <button 
-                          onClick={() => setActiveTab("resources")}
-                          className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-[10px] font-bold shadow-xs transition-colors cursor-pointer"
-                        >
-                          Tải lên ngay
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-1.5 max-h-36 overflow-y-auto p-1.5 border border-slate-100 rounded-xl bg-slate-50/50">
-                        {uploadedDocs.filter(d => d.grade === selectedGrade).map(doc => (
-                          <div key={doc.id} className="flex items-center justify-between bg-white rounded-lg p-2 border border-slate-100 text-xs shadow-3xs">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span>{getFileIcon(doc.fileType)}</span>
-                              <span className="font-medium text-slate-700 truncate">{doc.fileName}</span>
-                              <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[9px] font-medium flex-shrink-0">
-                                {getCategoryLabel(doc.category)}
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-                              <Check className="w-3.5 h-3.5" /> Được áp dụng
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 border-dashed text-xs text-slate-600">
+                      {generationMode === "new" ? (
+                        <span>✨ Chế độ: <strong>Sinh đề mới chuẩn kiến thức</strong>. Hệ thống sẽ căn cứ vào chương trình chuẩn SGK Global Success (Lớp {selectedGrade}, các Unit đã chọn) để sinh đề.</span>
+                      ) : (
+                        <span>📂 Chế độ: <strong>Sinh đề theo mẫu đề tải lên</strong>. Hệ thống sẽ kết hợp nội dung SGK và các file Đề mẫu, Ma trận, Đặc tả lớp {selectedGrade} bạn đã tải lên ở cột bên phải làm căn cứ biên soạn.</span>
+                      )}
+                    </div>
                   </div>
 
                    {/* Test type and duration */}
@@ -849,19 +797,25 @@ export default function App() {
                         onChange={(e) => {
                           const val = e.target.value;
                           setTestType(val);
-                          if (val === "midterm") {
-                            setTerm("Giữa kỳ I");
-                          } else if (val === "finalterm") {
-                            setTerm("Cuối kỳ I");
-                          } else {
+                          if (val === "15m") {
                             setTerm("Thường xuyên I");
+                          } else if (val === "midterm1") {
+                            setTerm("Giữa học kỳ I");
+                          } else if (val === "finalterm1") {
+                            setTerm("Cuối học kỳ I");
+                          } else if (val === "midterm2") {
+                            setTerm("Giữa học kỳ II");
+                          } else if (val === "finalterm2") {
+                            setTerm("Cuối học kỳ II");
                           }
                         }}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white shadow-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm font-medium"
                       >
                         <option value="15m">⏱️ Kiểm tra 15 Phút (20 câu trắc nghiệm)</option>
-                        <option value="midterm">📚 Kiểm tra Giữa kỳ (45 câu trắc nghiệm + 1 tự luận)</option>
-                        <option value="finalterm">🏆 Kiểm tra Cuối kỳ (36 câu trắc nghiệm + 1 tự luận)</option>
+                        <option value="midterm1">📚 Kiểm tra Giữa học kỳ I (36 câu trắc nghiệm + 1 tự luận)</option>
+                        <option value="finalterm1">🏆 Kiểm tra Cuối học kỳ I (36 câu trắc nghiệm + 1 tự luận)</option>
+                        <option value="midterm2">📚 Kiểm tra Giữa học kỳ II (36 câu trắc nghiệm + 1 tự luận)</option>
+                        <option value="finalterm2">🏆 Kiểm tra Cuối học kỳ II (36 câu trắc nghiệm + 1 tự luận)</option>
                       </select>
                     </div>
 
@@ -898,17 +852,17 @@ export default function App() {
                             <option value="Thường xuyên II">Thường xuyên học kỳ II</option>
                           </>
                         )}
-                        {testType === "midterm" && (
-                          <>
-                            <option value="Giữa kỳ I">Giữa học kỳ I</option>
-                            <option value="Giữa kỳ II">Giữa học kỳ II</option>
-                          </>
+                        {testType === "midterm1" && (
+                          <option value="Giữa học kỳ I">Giữa học kỳ I</option>
                         )}
-                        {testType === "finalterm" && (
-                          <>
-                            <option value="Cuối kỳ I">Cuối học kỳ I</option>
-                            <option value="Cuối kỳ II">Cuối học kỳ II</option>
-                          </>
+                        {testType === "finalterm1" && (
+                          <option value="Cuối học kỳ I">Cuối học kỳ I</option>
+                        )}
+                        {testType === "midterm2" && (
+                          <option value="Giữa học kỳ II">Giữa học kỳ II</option>
+                        )}
+                        {testType === "finalterm2" && (
+                          <option value="Cuối học kỳ II">Cuối học kỳ II</option>
                         )}
                       </select>
                     </div>
@@ -971,539 +925,217 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Sidebar: Advanced File Matrix Upload */}
+              {/* Sidebar: Căn cứ ra đề & Tài liệu tham khảo */}
               <div className="space-y-6">
+                {/* Generation Mode Option */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                   <div className="flex items-center gap-2 mb-4">
-                    <FileSpreadsheet className="w-5 h-5 text-amber-500" />
-                    <h3 className="font-bold text-slate-800">Tải Lên Ma Trận & Đề Mẫu</h3>
+                    <Sparkles className="w-5 h-5 text-blue-600" />
+                    <h3 className="font-bold text-slate-800 text-sm">Chế độ biên soạn</h3>
                   </div>
-                  <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                    Bạn có file ma trận đề thi hoặc đề kiểm tra mẫu? Tải lên đây để AI phân tích và tự động biên soạn một đề thi tương đương bám sát 100% cấu trúc của bạn.
-                  </p>
-
-                  {/* Drop zone */}
-                  <div
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    className={`border-2 border-dashed rounded-xl p-5 text-center transition-all flex flex-col items-center justify-center min-h-[160px] cursor-pointer ${
-                      isDragging ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:bg-slate-50"
-                    }`}
-                  >
-                    <input 
-                      type="file" 
-                      id="matrixFileInput" 
-                      accept=".txt,.json,.csv"
-                      onChange={handleFileSelectChange}
-                      className="hidden" 
-                    />
-                    <label htmlFor="matrixFileInput" className="cursor-pointer flex flex-col items-center justify-center w-full">
-                      {matrixFileContent ? (
-                        <>
-                          <CheckCircle className="w-10 h-10 text-emerald-500 mb-2.5" />
-                          <span className="text-xs font-bold text-slate-700 truncate max-w-full">
-                            {matrixFileName}
-                          </span>
-                          <span className="text-[10px] text-slate-400 mt-1">
-                            (Đã đọc thành công nội dung)
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <FileText className="w-10 h-10 text-slate-400 mb-2.5" />
-                          <span className="text-xs font-semibold text-slate-700">
-                            Kéo thả file ma trận vào đây
-                          </span>
-                          <span className="text-[10px] text-slate-400 mt-1.5">
-                            hoặc nhấp chuột để chọn file (.txt, .json, .csv)
-                          </span>
-                        </>
-                      )}
+                  <div className="space-y-2.5">
+                    <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      generationMode === "new" ? "border-blue-600 bg-blue-50/40" : "border-slate-200 hover:bg-slate-50"
+                    }`}>
+                      <input
+                        type="radio"
+                        name="generationMode"
+                        checked={generationMode === "new"}
+                        onChange={() => setGenerationMode("new")}
+                        className="mt-1"
+                      />
+                      <div>
+                        <span className="text-xs font-bold text-slate-800 block">Sinh đề mới chuẩn kiến thức</span>
+                        <span className="text-[10px] text-slate-500 block mt-0.5">Sử dụng dữ liệu SGK Global Success mặc định.</span>
+                      </div>
+                    </label>
+                    
+                    <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      generationMode === "reference" ? "border-blue-600 bg-blue-50/40" : "border-slate-200 hover:bg-slate-50"
+                    }`}>
+                      <input
+                        type="radio"
+                        name="generationMode"
+                        checked={generationMode === "reference"}
+                        onChange={() => setGenerationMode("reference")}
+                        className="mt-1"
+                      />
+                      <div>
+                        <span className="text-xs font-bold text-slate-800 block">Sinh đề theo mẫu đề tải lên</span>
+                        <span className="text-[10px] text-slate-500 block mt-0.5">Căn cứ theo đề mẫu, ma trận, đặc tả bạn tải lên dưới đây.</span>
+                      </div>
                     </label>
                   </div>
-
-                  {matrixFileContent && (
-                    <div className="mt-4">
-                      <div className="flex items-center justify-between bg-slate-50 p-2 rounded-lg text-xs">
-                        <span className="text-slate-500 italic truncate max-w-[140px]">{matrixFileName}</span>
-                        <button 
-                          onClick={clearMatrixFile}
-                          className="text-rose-600 font-bold hover:underline cursor-pointer"
-                        >
-                          Xóa
-                        </button>
-                      </div>
-                      <div className="mt-3.5 bg-slate-900 rounded-lg p-2.5 text-[10px] text-emerald-400 font-mono overflow-x-auto max-h-36">
-                        {matrixFileContent.substring(0, 300)}...
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                <div className="bg-gradient-to-br from-blue-50 to-amber-50/50 p-6 rounded-2xl border border-blue-100">
-                  <h4 className="font-bold text-slate-800 text-sm mb-2.5 flex items-center gap-1.5">
+                {/* Reference upload area */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Upload className="w-5 h-5 text-emerald-600" />
+                    <h3 className="font-bold text-slate-800 text-sm">Căn cứ & Tài liệu tham khảo</h3>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mb-4 leading-relaxed">
+                    Tải lên đề mẫu, đáp án mẫu, ma trận, đặc tả (PDF, Word, Excel, TXT) làm căn cứ ra đề.
+                  </p>
+
+                  <div className="space-y-3.5">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Loại tài liệu tải lên:</label>
+                      <select
+                        value={docUploadCategory}
+                        onChange={(e) => setDocUploadCategory(e.target.value as DocCategory)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium"
+                      >
+                        <option value="textbook">📚 SGK, Sách bài tập, Tài liệu</option>
+                        <option value="sample_exam">📋 Đề mẫu & Đáp án mẫu</option>
+                        <option value="matrix">📊 Ma trận đề thi</option>
+                        <option value="spec">📝 Đặc tả đề thi</option>
+                        <option value="other">📎 Tài liệu khác</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className={`block w-full text-center cursor-pointer ${isUploading ? 'bg-blue-300' : 'bg-blue-600 hover:bg-blue-700'} text-white px-3 py-2 rounded-lg text-xs font-bold transition-colors shadow-xs`}>
+                        {isUploading ? "⏳ Đang tải..." : "📂 Chọn file tải lên"}
+                        <input
+                          type="file"
+                          accept={ACCEPTED_FILE_TYPES}
+                          multiple
+                          className="hidden"
+                          onChange={handleMultiFileUpload}
+                          disabled={isUploading}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* List of uploaded files for current grade */}
+                  <div className="mt-5 border-t border-slate-100 pt-4">
+                    <h4 className="text-[11px] font-bold text-slate-700 mb-2.5">Tài liệu đã tải lên (Lớp {selectedGrade}):</h4>
+                    {uploadedDocs.filter(d => d.grade === selectedGrade).length === 0 ? (
+                      <p className="text-[10px] text-slate-400 italic">Chưa có tài liệu tham khảo nào được tải lên cho khối lớp này.</p>
+                    ) : (
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                        {uploadedDocs.filter(d => d.grade === selectedGrade).map(doc => (
+                          <div key={doc.id} className="flex items-center justify-between bg-slate-50 rounded-lg p-2 border border-slate-100 text-[10px]">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                              <span className="text-xs">{getFileIcon(doc.fileType)}</span>
+                              <span className="font-semibold text-slate-700 truncate" title={doc.fileName}>{doc.fileName}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <span className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded text-[8px] font-bold">
+                                {getCategoryLabel(doc.category)}
+                              </span>
+                              <button
+                                onClick={() => handleDeleteDoc(doc.id)}
+                                className="text-rose-600 hover:bg-rose-50 p-1 rounded"
+                                title="Xóa"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-blue-50 to-amber-50/50 p-5 rounded-2xl border border-blue-100">
+                  <h4 className="font-bold text-slate-800 text-xs mb-2 flex items-center gap-1.5">
                     <Info className="w-4 h-4 text-blue-600" />
-                    Thông tin chương trình học
+                    Hướng dẫn ra đề
                   </h4>
-                  <ul className="space-y-2 text-xs text-slate-600">
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-blue-600 font-bold">•</span>
-                      <span>Chương trình <strong>Global Success</strong> chia thành Học kì I (Units 1-6) và Học kì II (Units 7-12).</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-blue-600 font-bold">•</span>
-                      <span>Đề 15m bám sát nội dung từ 1-2 Unit tập trung vào ngữ âm và từ vựng cơ bản.</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-blue-600 font-bold">•</span>
-                      <span>Hệ thống áp dụng ngân hàng từ vựng học thuật phong phú, giải thích chi tiết, chính xác.</span>
-                    </li>
+                  <ul className="space-y-1.5 text-[10px] text-slate-600 leading-relaxed">
+                    <li>• Nếu không tải tài liệu tham khảo, AI sẽ tự động ra đề bằng kiến thức chuẩn SGK Global Success lớp 6-9 tích hợp sẵn.</li>
+                    <li>• Khi chọn <strong>Sinh đề theo mẫu đề tải lên</strong>, hãy tải lên các file đề mẫu hoặc ma trận tương ứng để AI làm căn cứ cấu trúc.</li>
                   </ul>
                 </div>
               </div>
 
             </div>
-          )}
 
-          {/* TAB 2: EXAM REPOSITORY / EXPLORER */}
-          {activeTab === "repository" && examMode === "none" && (
-            <div>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-800">Kho lưu trữ đề thi Tiếng Anh ({exams.length})</h2>
-                  <p className="text-xs text-slate-500">Xem lại, xáo trộn câu hỏi, làm bài trực tuyến hoặc in đề thi của bạn.</p>
+            {/* Danh sách đề thi đã soạn */}
+            <div className="mt-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 no-print">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-lg font-bold text-slate-800">Kho đề thi đã soạn ({exams.length})</h3>
                 </div>
-                <button
-                  onClick={() => setActiveTab("create")}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors font-semibold cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Tạo Đề Thi Mới</span>
-                </button>
+                {exams.length > 0 && (
+                  <span className="text-xs text-slate-500 italic">Nhấp vào đề để xem chi tiết hoặc tải file Word</span>
+                )}
               </div>
 
               {exams.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-2xl border border-slate-200 p-8 shadow-xs">
-                  <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                  <h3 className="font-bold text-slate-700 text-lg">Kho đề trống</h3>
-                  <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-                    Bạn chưa lưu đề thi nào. Hãy quay lại tab "Tạo Đề Mới" và cho AI hỗ trợ soạn thảo đề đầu tiên của bạn!
-                  </p>
+                <div className="text-center py-12 text-slate-400 italic text-sm">
+                  <FileText className="w-12 h-12 mx-auto mb-3 opacity-30 text-blue-600" />
+                  <p>Chưa có đề thi nào được soạn.</p>
+                  <p className="text-xs mt-1">Hãy thiết lập cấu hình ở trên và nhấn "Biên soạn đề thi bằng AI" để bắt đầu!</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                   {exams.map((exam) => (
-                    <div 
+                    <div
                       key={exam.id}
-                      onClick={() => { setCurrentExam(exam); setExamMode("view"); }}
-                      className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer relative group flex flex-col justify-between h-56"
+                      onClick={() => {
+                        setCurrentExam(exam);
+                        setExamMode("view");
+                      }}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-slate-50/50 transition-all cursor-pointer gap-4 group"
                     >
-                      <div>
-                        {/* Upper tag bar */}
-                        <div className="flex items-center justify-between gap-2 mb-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            exam.grade === 6 ? "bg-emerald-50 text-emerald-700" :
-                            exam.grade === 7 ? "bg-purple-50 text-purple-700" :
-                            exam.grade === 8 ? "bg-amber-50 text-amber-700" :
-                            "bg-rose-50 text-rose-700"
-                          }`}>
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
                             Lớp {exam.grade}
                           </span>
-                          <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold">
-                            {exam.testType === "15m" ? "⏱️ 15 Phút" : exam.testType === "midterm" ? "📚 Giữa kì" : "🏆 Cuối kì"}
+                          <span className="bg-slate-100 text-slate-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                            {exam.testType === "15m" ? "15 Phút" : exam.term || "Kiểm tra"}
+                          </span>
+                          <span className="text-slate-400 text-[10px]">
+                            {new Date(exam.createdAt).toLocaleDateString("vi-VN")}
                           </span>
                         </div>
-
-                        {/* Title */}
-                        <h3 className="font-bold text-slate-800 text-sm line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
+                        <h4 className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors truncate">
                           {exam.title}
-                        </h3>
-
-                        {/* versionCode / Code Shuffled badge if any */}
-                        {exam.versionCode && (
-                          <div className="mt-1">
-                            <span className="inline-flex items-center gap-1 text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">
-                              <Shuffle className="w-2.5 h-2.5" />
-                              {exam.versionCode}
-                            </span>
-                          </div>
-                        )}
-
-                        <p className="text-[11px] text-slate-400 mt-2">
-                          Số câu: <strong className="text-slate-600">{exam.totalQuestions}</strong> | Thời gian: <strong className="text-slate-600">{exam.duration}m</strong>
+                        </h4>
+                        <p className="text-xs text-slate-500">
+                          Thời gian: {exam.duration} phút · {exam.totalQuestions} câu hỏi · Mã đề: {exam.versionCode || "101"}
                         </p>
                       </div>
 
-                      {/* Footer Actions */}
-                      <div className="border-t border-slate-100 pt-3 mt-4 flex items-center justify-between">
-                        <span className="text-[10px] text-slate-400">
-                          {new Date(exam.createdAt).toLocaleDateString("vi-VN")}
-                        </span>
-                        
-                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => { setCurrentExam(exam); setExamMode("view"); }}
-                            className="p-1.5 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded transition-colors"
-                            title="Xem chi tiết"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleStartExamTaking(exam)}
-                            className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded transition-colors"
-                            title="Làm bài thử nghiệm"
-                          >
-                            <Play className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={(e) => handleDeleteExam(exam.id, e)}
-                            className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded transition-colors"
-                            title="Xóa đề"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                      <div className="flex items-center gap-2.5 flex-shrink-0 self-end sm:self-center" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => {
+                            setCurrentExam(exam);
+                            setExamMode("view");
+                          }}
+                          className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          Xem đề
+                        </button>
+                        <button
+                          onClick={() => handleStartExamTaking(exam)}
+                          className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          Làm bài
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteExam(exam.id, e)}
+                          className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                          title="Xóa đề"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          )}
+          </>
+        )}
 
-          {/* TAB 3: STUDENT PROGRESS & STATS */}
-          {activeTab === "analytics" && examMode === "none" && (
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-xl font-bold text-slate-800">Báo cáo & Tiến độ Đánh giá học tập</h2>
-                <p className="text-xs text-slate-500">Phân tích kết quả các lượt làm bài kiểm tra thử từ học sinh để nhận dạng lỗ hổng kiến thức.</p>
-              </div>
-
-              {/* Grid cards statistics */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 flex items-center gap-4">
-                  <div className="p-3 bg-blue-100 text-blue-600 rounded-xl">
-                    <FileText className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-400 font-medium block">Số đề đã soạn</span>
-                    <strong className="text-2xl text-slate-800 block mt-0.5">{exams.length} đề</strong>
-                  </div>
-                </div>
-
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 flex items-center gap-4">
-                  <div className="p-3 bg-emerald-100 text-emerald-600 rounded-xl">
-                    <Trophy className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-400 font-medium block">Đã làm bài thử</span>
-                    <strong className="text-2xl text-slate-800 block mt-0.5">{history.length} lần</strong>
-                  </div>
-                </div>
-
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 flex items-center gap-4">
-                  <div className="p-3 bg-amber-100 text-amber-600 rounded-xl">
-                    <HelpCircle className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-400 font-medium block">Điểm trung bình</span>
-                    <strong className="text-2xl text-slate-800 block mt-0.5">
-                      {history.length > 0
-                        ? (history.reduce((acc, h) => acc + h.score, 0) / history.length).toFixed(1)
-                        : "0.0"}
-                      /10
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 flex items-center gap-4">
-                  <div className="p-3 bg-rose-100 text-rose-600 rounded-xl">
-                    <Clock className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-400 font-medium block">Tổng thời gian</span>
-                    <strong className="text-2xl text-slate-800 block mt-0.5">
-                      {Math.round(history.reduce((acc, h) => acc + h.timeSpent, 0) / 60)} phút
-                    </strong>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                {/* History list */}
-                <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200">
-                  <h3 className="font-bold text-slate-800 text-sm mb-4">Lịch sử làm bài thi chi tiết</h3>
-                  
-                  {history.length === 0 ? (
-                    <div className="text-center py-10 italic text-xs text-slate-400">
-                      Chưa có dữ liệu làm bài thi trực tuyến. Nhấp vào Kho Đề và bấm nút Play để tiến hành làm thử đề thi kiểm tra ngay.
-                    </div>
-                  ) : (
-                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
-                      {history.map((hist) => (
-                        <div 
-                          key={hist.id}
-                          className="p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-100 rounded-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs"
-                        >
-                          <div>
-                            <span className="font-bold text-slate-700 block text-[13px]">{hist.examTitle}</span>
-                            <span className="text-[10px] text-slate-400 block mt-1">
-                              Ngày làm: {new Date(hist.takenAt).toLocaleString("vi-VN")} | Thời gian giải: {formatTime(hist.timeSpent)}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-center">
-                            <span className="text-[11px] font-semibold text-slate-500">
-                              Đúng {hist.correctCount}/{hist.totalQuestions} câu
-                            </span>
-                            <span className={`px-3 py-1 rounded-full font-bold text-[13px] ${
-                              hist.score >= 8.0 ? "bg-emerald-100 text-emerald-800" :
-                              hist.score >= 5.0 ? "bg-amber-100 text-amber-800" :
-                              "bg-rose-100 text-rose-800"
-                            }`}>
-                              {hist.score} đ
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* AI Weak Area detection */}
-                <div className="bg-white p-6 rounded-2xl border border-slate-200">
-                  <h3 className="font-bold text-slate-800 text-sm mb-2.5 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-amber-500" />
-                    Chẩn đoán Lỗ hổng (AI Suggest)
-                  </h3>
-                  <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                    Hệ thống AI tự động phân tích những câu hỏi bị sai nhiều để liệt kê các mảng ngữ pháp/từ vựng học sinh đang còn yếu.
-                  </p>
-
-                  {history.length === 0 ? (
-                    <div className="text-center py-10 italic text-[11px] text-slate-400">
-                      Làm ít nhất một bài kiểm tra để kích hoạt tính năng chẩn đoán AI.
-                    </div>
-                  ) : getWeakTopics().length === 0 ? (
-                    <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl text-center text-xs text-emerald-800 font-medium">
-                      🎉 Tuyệt vời! Chưa phát hiện lỗ hổng kiến thức nghiêm trọng nào cần cảnh báo.
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {getWeakTopics().map((t, idx) => (
-                        <div key={idx} className="space-y-1.5">
-                          <div className="flex justify-between text-xs font-semibold text-slate-700">
-                            <span className="truncate max-w-[170px]">{t.topic}</span>
-                            <span className="text-rose-600">Sai {t.percentage}%</span>
-                          </div>
-                          <div className="w-full bg-slate-100 rounded-full h-2">
-                            <div 
-                              className="bg-rose-500 h-2 rounded-full" 
-                              style={{ width: `${t.percentage}%` }}
-                            />
-                          </div>
-                          <p className="text-[10px] text-slate-400 italic">
-                            (Sai {t.wrong} trên {t.total} câu hỏi thuộc mảng này)
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-              </div>
-            </div>
-          )}
-
-
-          {/* TAB 5: RESOURCE LIBRARY (PDF, Word, Excel uploads) */}
-          {activeTab === "resources" && examMode === "none" && (
-            <div className="space-y-6">
-              {/* Upload Panel */}
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2.5 bg-gradient-to-tr from-blue-600 to-emerald-500 rounded-xl text-white">
-                    <Upload className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-800">Ngân hàng Tài liệu & Sách giáo khoa</h2>
-                    <p className="text-xs text-slate-500 mt-0.5">Tải lên Đề mẫu, Ma trận, Đặc tả, SGK (PDF / Word / Excel) – hỗ trợ nhiều file cùng lúc. Dữ liệu được lưu vĩnh viễn trên trình duyệt.</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">Phân loại tài liệu</label>
-                    <select
-                      value={docUploadCategory}
-                      onChange={(e) => setDocUploadCategory(e.target.value as DocCategory)}
-                      className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                    >
-                      <option value="textbook">📚 Sách giáo khoa / Tài liệu dạy học</option>
-                      <option value="sample_exam">📋 Đề mẫu tham khảo</option>
-                      <option value="matrix">📊 Ma trận đề thi</option>
-                      <option value="spec">📝 Đặc tả đề thi</option>
-                      <option value="other">📎 Tài liệu khác</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">Khối lớp</label>
-                    <select
-                      value={docUploadGrade}
-                      onChange={(e) => setDocUploadGrade(Number(e.target.value))}
-                      className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                    >
-                      <option value={6}>Lớp 6</option>
-                      <option value={7}>Lớp 7</option>
-                      <option value={8}>Lớp 8</option>
-                      <option value={9}>Lớp 9</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">Chọn tệp tải lên</label>
-                    <label className={`block w-full text-center cursor-pointer ${isUploading ? 'bg-blue-300 cursor-wait' : 'bg-blue-600 hover:bg-blue-700'} text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm`}>
-                      {isUploading ? "⏳ Đang xử lý..." : "📂 Chọn file (PDF, Word, Excel)"}
-                      <input
-                        type="file"
-                        accept={ACCEPTED_FILE_TYPES}
-                        multiple
-                        className="hidden"
-                        onChange={handleMultiFileUpload}
-                        disabled={isUploading}
-                      />
-                    </label>
-                  </div>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
-                  <strong>💡 Mẹo:</strong> Bạn có thể chọn nhiều file cùng lúc (giữ Ctrl/Cmd khi chọn). Hỗ trợ: <strong>.pdf, .doc, .docx, .xls, .xlsx, .txt</strong>. AI sẽ tự động trích xuất nội dung và sử dụng làm ngân hàng kiến thức để ra đề chính xác hơn.
-                </div>
-              </div>
-
-              {/* Stored Documents */}
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                    <FolderOpen className="w-4 h-4 text-blue-600" />
-                    Tài liệu đã lưu trữ ({uploadedDocs.length} tệp)
-                  </h3>
-                </div>
-
-                {uploadedDocs.length === 0 ? (
-                  <div className="text-center py-12 text-slate-400 italic text-sm">
-                    <Upload className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                    <p>Chưa có tài liệu nào được tải lên.</p>
-                    <p className="text-xs mt-1">Hãy tải lên SGK, đề mẫu, ma trận... để AI ra đề chính xác hơn!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    {/* Group by grade */}
-                    {[6, 7, 8, 9].map(grade => {
-                      const gradeDocs = uploadedDocs.filter(d => d.grade === grade);
-                      if (gradeDocs.length === 0) return null;
-                      return (
-                        <div key={grade} className="mb-4">
-                          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                            <span className="bg-blue-100 text-blue-700 font-bold w-6 h-6 flex items-center justify-center rounded text-[10px]">L{grade}</span>
-                            Lớp {grade} ({gradeDocs.length} tệp)
-                          </h4>
-                          <div className="space-y-1.5">
-                            {gradeDocs.map(doc => (
-                              <div key={doc.id} className="flex items-center justify-between bg-slate-50 hover:bg-slate-100 rounded-xl px-4 py-2.5 transition-colors group">
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                  <span className="text-lg flex-shrink-0">{getFileIcon(doc.fileType)}</span>
-                                  <div className="min-w-0">
-                                    <p className="text-sm font-medium text-slate-800 truncate">{doc.fileName}</p>
-                                    <p className="text-[10px] text-slate-400">
-                                      {getCategoryLabel(doc.category)} · {(doc.fileSize / 1024).toFixed(0)} KB · {new Date(doc.uploadedAt).toLocaleDateString("vi-VN")}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-[10px] font-medium">{doc.fileType.toUpperCase()}</span>
-                                  <button
-                                    onClick={() => handleDeleteDoc(doc.id)}
-                                    className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                                    title="Xóa tệp"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: GENERAL AI TUTOR PORTAL */}
-          {activeTab === "tutor" && examMode === "none" && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm max-w-4xl mx-auto flex flex-col h-[520px]">
-              {/* Header chat */}
-              <div className="p-4 border-b border-slate-100 bg-slate-50 rounded-t-2xl flex items-center gap-3">
-                <div className="p-2 bg-amber-100 rounded-lg text-amber-600">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-800 text-sm">Gia sư Tiếng Anh THCS Global Success AI</h3>
-                  <p className="text-[10px] text-slate-400 font-medium">Giải đáp ngữ pháp, học từ vựng, sửa đề và gợi ý cấu trúc viết câu</p>
-                </div>
-              </div>
-
-              {/* Message Feed */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
-                {tutorMessages.map((msg, idx) => (
-                  <div 
-                    key={idx} 
-                    className={`flex items-start gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
-                  >
-                    <div className={`p-2.5 rounded-2xl max-w-[80%] whitespace-pre-line leading-relaxed ${
-                      msg.role === "user" 
-                        ? "bg-blue-600 text-white rounded-tr-none" 
-                        : "bg-slate-100 text-slate-800 rounded-tl-none border border-slate-200"
-                    }`}>
-                      {msg.text}
-                    </div>
-                  </div>
-                ))}
-                
-                {isTutorLoading && (
-                  <div className="flex items-center gap-2 text-slate-400 italic text-[11px]">
-                    <div className="flex space-x-1">
-                      <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                      <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                      <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                    </div>
-                    <span>Gia sư AI đang viết giải thích...</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Chat Form */}
-              <div className="p-3 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex gap-2">
-                <input
-                  type="text"
-                  value={tutorInput}
-                  onChange={(e) => setTutorInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleSendTutorMessage(); }}
-                  placeholder="Hỏi về ngữ pháp Unit 1 lớp 6, hỏi từ mới, giải thích đề..."
-                  className="flex-1 px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                />
-                <button
-                  onClick={handleSendTutorMessage}
-                  className="p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors cursor-pointer"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
 
@@ -1518,7 +1150,7 @@ export default function App() {
                 className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition-colors font-semibold cursor-pointer"
               >
                 <ArrowRight className="w-4 h-4 rotate-180" />
-                Quay lại Danh Sách / Thư Viện
+                Quay lại cấu hình đề
               </button>
 
               <div className="flex items-center gap-2 flex-wrap">
@@ -1734,16 +1366,7 @@ export default function App() {
                                         <div className="text-slate-600">
                                           <strong>Giải thích chi tiết:</strong> {q.explanation}
                                         </div>
-                                        <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
-                                          <span className="text-[10px] text-slate-400">Không hiểu lời giải?</span>
-                                          <button
-                                            onClick={() => askTutorAboutQuestion(q.questionText)}
-                                            className="text-[10px] text-amber-600 hover:underline font-bold flex items-center gap-1 cursor-pointer"
-                                          >
-                                            <Sparkles className="w-3 h-3" />
-                                            Hỏi thêm AI Tutor
-                                          </button>
-                                        </div>
+                                        
                                       </motion.div>
                                     )}
                                   </div>

@@ -301,7 +301,7 @@ function createTestPrompt(grade, units, testType, difficulty, customPrompt, term
     }
     return `Unit ${u}`;
   }).join("\n");
-  let duration = grade === 6 ? 60 : 90;
+  let duration = grade <= 7 ? 60 : 90;
   let totalQuestions = 37;
   let structureGuideline = "";
   let metaData = "";
@@ -316,28 +316,26 @@ function createTestPrompt(grade, units, testType, difficulty, customPrompt, term
 T\u1EA5t c\u1EA3 20 c\xE2u tr\u1EAFc nghi\u1EC7m \u0111\u1EC1u ch\u1EC9 c\xF3 T\u1ED0I \u0110A 3 \u0111\xE1p \xE1n: A, B, C. \u0110\xE1nh s\u1ED1 c\xE2u li\xEAn t\u1EE5c t\u1EEB 1 \u0111\u1EBFn 20. KH\xD4NG t\u1EA1o \u0111\xE1p \xE1n D.`;
     metaData = `MA TR\u1EACN B\u1EAET BU\u1ED8C: T\u1EEB v\u1EF1ng 50%, Ng\u1EEF ph\xE1p 50%. M\u1EE9c \u0111\u1ED9: Bi\u1EBFt 50%, Hi\u1EC3u 30%, V\u1EADn d\u1EE5ng 20%.`;
   } else if (testType === "midterm") {
-    duration = 60;
-    totalQuestions = 46;
+    totalQuestions = 37;
     titleString = `\u0110\u1EC0 KI\u1EC2M TRA \u0110\xC1NH GI\xC1 GI\u1EEEA H\u1ECCC K\xCC ${term?.includes("II") ? "II" : "I"} - TI\u1EBENG ANH L\u1EDAP ${grade}`;
-    structureGuideline = `C\u1EA4U TR\xDAC \u0110\u1EC0 B\u1EAET BU\u1ED8C (8 Ph\u1EA7n - 45 c\xE2u tr\u1EAFc nghi\u1EC7m + 1 b\xE0i vi\u1EBFt):
-- Part 1. Listen and decide if each statement is True (T) or False (F) (5 c\xE2u - t\u1EEB c\xE2u 1 \u0111\u1EBFn 5). Ch\u1EC9 d\xF9ng A. True v\xE0 B. False.
-- Part 2. Listen and circle the best answer A, B or C (5 c\xE2u - t\u1EEB c\xE2u 6 \u0111\u1EBFn 10).
-- Part 3. Choose the best answer A, B or C to complete the sentences (15 c\xE2u - t\u1EEB c\xE2u 11 \u0111\u1EBFn 25).
-- Part 4. Read the passage and choose the correct word A, B or C for each blank (5 c\xE2u - t\u1EEB c\xE2u 26 \u0111\u1EBFn 30).
-- Part 5. Read the passage and choose the best answer A, B or C (5 c\xE2u - t\u1EEB c\xE2u 31 \u0111\u1EBFn 35).
-- Part 6. Choose the sentence (A, B or C) that is correctly rearranged (5 c\xE2u - t\u1EEB c\xE2u 36 \u0111\u1EBFn 40).
-- Part 7. Choose the sentence that has the closest meaning to the root (5 c\xE2u - t\u1EEB c\xE2u 41 \u0111\u1EBFn 45).
-- Part 8. Write a short paragraph (50-60 words) (1 c\xE2u t\u1EF1 lu\u1EADn cu\u1ED1i c\xF9ng).
+    structureGuideline = `C\u1EA4U TR\xDAC \u0110\u1EC0 B\u1EAET BU\u1ED8C (8 Ph\u1EA7n - 36 c\xE2u tr\u1EAFc nghi\u1EC7m + 1 b\xE0i vi\u1EBFt):
+- Part 1. Listening - Dialogue (\u0110\u1ED1i tho\u1EA1i Nam/N\u1EEF): Listen and circle the best answer A, B or C (5 c\xE2u - t\u1EEB c\xE2u 1 \u0111\u1EBFn 5).
+- Part 2. Listening - Monologue (\u0110\u1ED9c tho\u1EA1i): Listen and decide if each statement is True (T) or False (F) (5 c\xE2u - t\u1EEB c\xE2u 6 \u0111\u1EBFn 10). Ch\u1EC9 d\xF9ng A. True v\xE0 B. False.
+- Part 3. Choose the best answer A, B or C to complete the sentences (12 c\xE2u - t\u1EEB c\xE2u 11 \u0111\u1EBFn 22).
+- Part 4. Read the passage and choose the correct word A, B or C for each blank (5 c\xE2u - t\u1EEB c\xE2u 23 \u0111\u1EBFn 27).
+- Part 5. Read the passage and choose the best answer A, B or C (5 c\xE2u - t\u1EEB c\xE2u 28 \u0111\u1EBFn 32).
+- Part 6. Choose the sentence (A, B or C) that is correctly rearranged (2 c\xE2u - t\u1EEB c\xE2u 33 v\xE0 34).
+- Part 7. Choose the sentence that has the closest meaning to the root (2 c\xE2u - t\u1EEB c\xE2u 35 v\xE0 36).
+- Part 8. Writing: Write a paragraph (80-100 words) (1 c\xE2u t\u1EF1 lu\u1EADn cu\u1ED1i c\xF9ng).
 
-T\u1EA5t c\u1EA3 c\xE2u tr\u1EAFc nghi\u1EC7m \u0111\u1EC1u ch\u1EC9 c\xF3 T\u1ED0I \u0110A 3 \u0111\xE1p \xE1n: A, B, C. \u0110\xE1nh s\u1ED1 c\xE2u li\xEAn t\u1EE5c t\u1EEB 1 \u0111\u1EBFn 45. C\xE2u Writing (Part 8) kh\xF4ng \u0111\xE1nh s\u1ED1 tr\u1EAFc nghi\u1EC7m. KH\xD4NG t\u1EA1o \u0111\xE1p \xE1n D.`;
-    metaData = `MA TR\u1EACN B\u1EAET BU\u1ED8C: Nghe 25%, \u0110\u1ECDc 25%, Ng\xF4n ng\u1EEF 30%, Vi\u1EBFt 20%. M\u1EE9c \u0111\u1ED9: Bi\u1EBFt 40%, Hi\u1EC3u 30%, V\u1EADn d\u1EE5ng 30%.`;
+T\u1EA5t c\u1EA3 c\xE2u tr\u1EAFc nghi\u1EC7m \u0111\u1EC1u ch\u1EC9 c\xF3 T\u1ED0I \u0110A 3 \u0111\xE1p \xE1n: A, B, C. \u0110\xE1nh s\u1ED1 c\xE2u li\xEAn t\u1EE5c t\u1EEB 1 \u0111\u1EBFn 36. C\xE2u Writing (Part 8) kh\xF4ng \u0111\xE1nh s\u1ED1 tr\u1EAFc nghi\u1EC7m. KH\xD4NG t\u1EA1o \u0111\xE1p \xE1n D.`;
+    metaData = `MA TR\u1EACN B\u1EAET BU\u1ED8C: Nghe 25% (2.5 \u0111i\u1EC3m), \u0110\u1ECDc 25% (2.5 \u0111i\u1EC3m), Ng\xF4n ng\u1EEF 30% (3.0 \u0111i\u1EC3m), Vi\u1EBFt 20% (1.0 \u0111i\u1EC3m vi\u1EBFt l\u1EA1i/s\u1EAFp x\u1EBFp + 1.0 \u0111i\u1EC3m vi\u1EBFt \u0111o\u1EA1n v\u0103n = 2.0 \u0111i\u1EC3m). T\u1ED5ng \u0111i\u1EC3m b\xE0i ki\u1EC3m tra tr\xEAn gi\u1EA5y l\xE0 10.0 \u0111i\u1EC3m (36 c\xE2u tr\u1EAFc nghi\u1EC7m x 0.25 \u0111i\u1EC3m + 1 c\xE2u vi\u1EBFt t\u1EF1 lu\u1EADn x 1.0 \u0111i\u1EC3m). M\u1EE9c \u0111\u1ED9: Bi\u1EBFt 40%, Hi\u1EC3u 30%, V\u1EADn d\u1EE5ng 30%.`;
   } else {
-    duration = 90;
     totalQuestions = 37;
     titleString = `\u0110\u1EC0 KI\u1EC2M TRA \u0110\xC1NH GI\xC1 CU\u1ED0I H\u1ECCC K\xCC ${term?.includes("II") ? "II" : "I"} - TI\u1EBENG ANH L\u1EDAP ${grade}`;
     structureGuideline = `C\u1EA4U TR\xDAC \u0110\u1EC0 B\u1EAET BU\u1ED8C (8 Ph\u1EA7n - 36 c\xE2u tr\u1EAFc nghi\u1EC7m + 1 b\xE0i vi\u1EBFt):
-- Part 1. Listen and circle the best answer A, B, or C (5 c\xE2u - t\u1EEB c\xE2u 1 \u0111\u1EBFn 5).
-- Part 2. Listen and circle the best answer A or B (True/False) (5 c\xE2u - t\u1EEB c\xE2u 6 \u0111\u1EBFn 10). Ch\u1EC9 d\xF9ng A. True v\xE0 B. False.
+- Part 1. Listening - Dialogue (\u0110\u1ED1i tho\u1EA1i Nam/N\u1EEF): Listen and circle the best answer A, B, or C (5 c\xE2u - t\u1EEB c\xE2u 1 \u0111\u1EBFn 5).
+- Part 2. Listening - Monologue (\u0110\u1ED9c tho\u1EA1i): Listen and circle the best answer A or B (True/False) (5 c\xE2u - t\u1EEB c\xE2u 6 \u0111\u1EBFn 10). Ch\u1EC9 d\xF9ng A. True v\xE0 B. False.
 - Part 3. Choose A, B, or C to complete the following sentences (12 c\xE2u - t\u1EEB c\xE2u 11 \u0111\u1EBFn 22).
 - Part 4. Read and choose the best answer A, B or C to complete the passage (5 c\xE2u - t\u1EEB c\xE2u 23 \u0111\u1EBFn 27).
 - Part 5. Read the passage and choose the best answer A, B or C (5 c\xE2u - t\u1EEB c\xE2u 28 \u0111\u1EBFn 32).
@@ -346,7 +344,7 @@ T\u1EA5t c\u1EA3 c\xE2u tr\u1EAFc nghi\u1EC7m \u0111\u1EC1u ch\u1EC9 c\xF3 T\u1E
 - Part 8. Writing: Write a paragraph (80-100 words) (1 c\xE2u t\u1EF1 lu\u1EADn cu\u1ED1i c\xF9ng).
 
 T\u1EA5t c\u1EA3 c\xE2u tr\u1EAFc nghi\u1EC7m \u0111\u1EC1u ch\u1EC9 c\xF3 T\u1ED0I \u0110A 3 \u0111\xE1p \xE1n: A, B, C. \u0110\xE1nh s\u1ED1 c\xE2u li\xEAn t\u1EE5c t\u1EEB 1 \u0111\u1EBFn 36. C\xE2u Writing (Part 8) kh\xF4ng \u0111\xE1nh s\u1ED1 tr\u1EAFc nghi\u1EC7m. KH\xD4NG t\u1EA1o \u0111\xE1p \xE1n D.`;
-    metaData = `MA TR\u1EACN B\u1EAET BU\u1ED8C: Nghe 25%, \u0110\u1ECDc 25%, Ng\xF4n ng\u1EEF 30%, Vi\u1EBFt 20%. M\u1EE9c \u0111\u1ED9: Bi\u1EBFt 40%, Hi\u1EC3u 30%, V\u1EADn d\u1EE5ng 30%.`;
+    metaData = `MA TR\u1EACN B\u1EAET BU\u1ED8C: Nghe 20% (2.0 \u0111i\u1EC3m), \u0110\u1ECDc 20% (2.0 \u0111i\u1EC3m), Ng\xF4n ng\u1EEF 24% (2.4 \u0111i\u1EC3m), Vi\u1EBFt 16% (0.8 \u0111i\u1EC3m vi\u1EBFt l\u1EA1i/s\u1EAFp x\u1EBFp + 0.8 \u0111i\u1EC3m vi\u1EBFt \u0111o\u1EA1n v\u0103n = 1.6 \u0111i\u1EC3m), N\xF3i (Speaking) 20% (2.0 \u0111i\u1EC3m). T\u1ED5ng \u0111i\u1EC3m b\xE0i vi\u1EBFt tr\xEAn gi\u1EA5y l\xE0 8.0 \u0111i\u1EC3m (36 c\xE2u tr\u1EAFc nghi\u1EC7m x 0.2 \u0111i\u1EC3m + 1 c\xE2u t\u1EF1 lu\u1EADn x 0.8 \u0111i\u1EC3m), b\xE0i n\xF3i 2.0 \u0111i\u1EC3m. M\u1EE9c \u0111\u1ED9: Bi\u1EBFt 40%, Hi\u1EC3u 30%, V\u1EADn d\u1EE5ng 30%.`;
   }
   return `B\u1EA1n l\xE0 tr\u1EE3 l\xFD t\u1EA1o \u0111\u1EC1 ki\u1EC3m tra m\xF4n Ti\u1EBFng Anh THCS. Nhi\u1EC7m v\u1EE5 c\u1EE7a b\u1EA1n l\xE0 t\u1EA1o \u0111\u1EC1 ki\u1EC3m tra ${testType === "15m" ? "15 ph\xFAt" : term || "gi\u1EEFa h\u1ECDc k\u1EF3"} cho l\u1EDBp ${grade} theo \u0111\xFAng m\u1EABu \u0111\xE3 n\u1EA1p. M\u1ED7i c\xE2u tr\u1EAFc nghi\u1EC7m ch\u1EC9 c\xF3 t\u1ED1i \u0111a 3 \u0111\xE1p \xE1n A, B, C. Kh\xF4ng bao gi\u1EDD t\u1EA1o \u0111\xE1p \xE1n D. D\u1EA1ng True/False ch\u1EC9 d\xF9ng A. True v\xE0 B. False. Ph\u1EA3i t\u1EA1o k\xE8m \u0111\xE1p \xE1n, ma tr\u1EADn v\xE0 \u0111\u1EB7c t\u1EA3. N\u1ED9i dung ph\u1EA3i b\xE1m l\u1EDBp ${grade}, h\u1ECDc k\u1EF3, unit, ch\u1EE7 \u0111\u1EC1, t\u1EEB v\u1EF1ng v\xE0 ng\u1EEF ph\xE1p ng\u01B0\u1EDDi d\xF9ng nh\u1EADp.
 
@@ -364,6 +362,11 @@ ${structureGuideline}
 
 ${metaData}
 
+Y\xCAU C\u1EA6U B\u1EAET BU\u1ED8C V\u1EC0 N\u1ED8I DUNG:
+1. \u0110\u1ED0I V\u1EDAI B\xC0I \u0110\u1ECCC (Part 4, Part 5): Ph\u1EA3i vi\u1EBFt \u0111\u1EA7y \u0111\u1EE7 \u0111o\u1EA1n v\u0103n \u0111\u1ECDc hi\u1EC3u (Reading Passage) \u1EDF ph\u1EA7n "instruction" c\u1EE7a Part t\u01B0\u01A1ng \u1EE9ng \u0111\xF3. TUY\u1EC6T \u0110\u1ED0I kh\xF4ng \u0111\u01B0\u1EE3c \u0111\u1EC3 tr\u1ED1ng \u0111o\u1EA1n v\u0103n. V\xED d\u1EE5 \u1EDF Part 4: "Read the passage and choose the correct word... [N\u1ED9i dung \u0111o\u1EA1n v\u0103n c\xF3 c\xE1c ch\u1ED7 tr\u1ED1ng (23), (24)...]". \u1EDE Part 5: "Read the passage and choose the best answer... [N\u1ED9i dung \u0111o\u1EA1n v\u0103n \u0111\u1ECDc hi\u1EC3u ho\xE0n ch\u1EC9nh]".
+2. \u0110\u1ED0I V\u1EDAI B\xC0I NGHE (Part 1, Part 2): Ph\u1EA3i vi\u1EBFt l\u1EDDi tho\u1EA1i b\xE0i nghe (Audio Transcript) \u0111\u1EA7y \u0111\u1EE7 cho c\u1EA3 2 b\xE0i nghe (b\xE0i \u0111\u1ED9c tho\u1EA1i True/False v\xE0 b\xE0i \u0111\u1ED1i tho\u1EA1i Nam/N\u1EEF) v\xE0o tr\u01B0\u1EDDng "transcripts" c\u1EE7a k\u1EBFt qu\u1EA3 JSON. Kh\xF4ng \u0111\u01B0\u1EE3c ghi chung chung m\xE0 ph\u1EA3i c\xF3 k\u1ECBch b\u1EA3n l\u1EDDi tho\u1EA1i chi ti\u1EBFt.
+3. \u0110\u1ED0I V\u1EDAI \u0110\xC1P \xC1N: Gi\u1EA3i th\xEDch \u1EDF tr\u01B0\u1EDDng "explanation" ph\u1EA3i vi\u1EBFt b\u1EB1ng ti\u1EBFng Vi\u1EC7t v\xE0 gi\u1EA3i th\xEDch chi ti\u1EBFt, c\u1EB7n k\u1EBD t\u1EA1i sao ch\u1ECDn \u0111\xE1p \xE1n \u0111\xF3 (v\xED d\u1EE5 gi\u1EA3i th\xEDch c\u1EA5u tr\xFAc ng\u1EEF ph\xE1p hay ngh\u0129a c\u1EE7a t\u1EEB v\u1EF1ng).
+
 \u0110\u1ECBnh d\u1EA1ng k\u1EBFt qu\u1EA3 tr\u1EA3 v\u1EC1 ph\u1EA3i l\xE0 m\u1ED9t JSON ho\xE0n h\u1EA3o tu\xE2n th\u1EE7 schema sau:
 {
   "title": "${titleString}",
@@ -376,14 +379,14 @@ ${metaData}
   "parts": [
     {
       "title": "T\xEAn ph\u1EA7n (v\xED d\u1EE5: Part I: Vocabulary)",
-      "instruction": "Y\xEAu c\u1EA7u c\u1EE7a ph\u1EA7n thi (v\xED d\u1EE5: Choose the best answer A, B, or C...)",
+      "instruction": "Y\xEAu c\u1EA7u c\u1EE7a ph\u1EA7n thi k\xE8m theo \u0111o\u1EA1n v\u0103n \u0111\u1ECDc hi\u1EC3u ho\xE0n ch\u1EC9nh n\u1EBFu l\xE0 ph\u1EA7n thi \u0110\u1ECDc (V\xED d\u1EE5: Read the passage... [N\u1ED9i dung \u0111o\u1EA1n v\u0103n \u0111\u1ECDc hi\u1EC3u])",
       "questions": [
         {
           "id": "1",
           "questionText": "N\u1ED9i dung c\xE2u h\u1ECFi (ch\u1EC9 c\xF3 3 l\u1EF1a ch\u1ECDn A, B, C)",
           "options": ["A. ...", "B. ...", "C. ..."],
           "correctAnswer": "A",
-          "explanation": "Gi\u1EA3i th\xEDch chi ti\u1EBFt",
+          "explanation": "Gi\u1EA3i th\xEDch chi ti\u1EBFt b\u1EB1ng ti\u1EBFng Vi\u1EC7t l\xFD do ch\u1ECDn \u0111\xE1p \xE1n n\xE0y",
           "difficulty": "Nh\u1EADn bi\u1EBFt",
           "topic": "Ch\u1EE7 \u0111\u1EC1"
         }
@@ -392,8 +395,8 @@ ${metaData}
   ],
   "matrixData": "N\u1ED9i dung b\u1EA3ng ma tr\u1EADn chi ti\u1EBFt d\u01B0\u1EDBi d\u1EA1ng Markdown",
   "specData": "N\u1ED9i dung b\u1EA3ng \u0111\u1EB7c t\u1EA3 chi ti\u1EBFt d\u01B0\u1EDBi d\u1EA1ng Markdown",
-  "transcripts": "N\u1ED9i dung transcript ph\u1EA7n nghe (n\u1EBFu c\xF3)",
-  "writingRubric": "G\u1EE3i \xFD ch\u1EA5m \u0111i\u1EC3m ph\u1EA7n vi\u1EBFt (n\u1EBFu c\xF3)"
+  "transcripts": "N\u1ED9i dung l\u1EDDi tho\u1EA1i (Audio Transcript) chi ti\u1EBFt cho c\u1EA3 2 b\xE0i nghe (\u0110\u1ED9c tho\u1EA1i True/False v\xE0 \u0110\u1ED1i tho\u1EA1i Nam/N\u1EEF)",
+  "writingRubric": "G\u1EE3i \xFD ch\u1EA5m \u0111i\u1EC3m ph\u1EA7n vi\u1EBFt chi ti\u1EBFt k\xE8m b\xE0i m\u1EABu tham kh\u1EA3o"
 }
 
 H\xE3y tr\u1EA3 v\u1EC1 duy nh\u1EA5t chu\u1ED7i JSON h\u1EE3p l\u1EC7. Kh\xF4ng bao g\u1ED3m b\u1EA5t k\u1EF3 ph\u1EA7n text gi\u1EDBi thi\u1EC7u hay d\u1EA5u nh\xE1y \`\`\`json \u1EDF ngo\xE0i.`;

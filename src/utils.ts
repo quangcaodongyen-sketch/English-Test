@@ -154,7 +154,6 @@ const BGDDT_DOC_START = `
       margin-bottom: 6pt;
     }
     .options-table td {
-      width: 33.33%;
       padding: 1pt 8pt;
       font-size: 13pt;
       border: none;
@@ -224,8 +223,8 @@ function getOfficialHeader(exam: Exam) {
   <table class="header-table">
     <tr>
       <td class="col-left">
-        <div class="org-name">${exam.orgName || "UBND XÃ ĐỒNG YÊN"}</div>
-        <div class="school-name">${exam.schoolName || "TRƯỜNG THCS ĐỒNG YÊN"}</div>
+        <div class="org-name">${exam.orgName || "SỞ GIÁO DỤC VÀ ĐÀO TẠO ................."}</div>
+        <div class="school-name">${exam.schoolName || "TRƯỜNG THCS ........................................"}</div>
         <span class="underline-short"></span>
       </td>
       <td class="col-right">
@@ -247,15 +246,26 @@ function getStudentInfoBlock() {
   return `
   <table class="student-info-table">
     <tr>
-      <td style="width:70%">Họ và tên: .................................................................</td>
-      <td style="width:15%">Lớp: ............</td>
-      <td style="width:15%">SBD: ............</td>
+      <td style="width:70%; font-size:12pt; font-family:'Times New Roman';">Họ và tên học sinh: .................................................................</td>
+      <td style="width:15%; font-size:12pt; font-family:'Times New Roman';">Lớp: ............</td>
+      <td style="width:15%; font-size:12pt; font-family:'Times New Roman';">SBD: ............</td>
     </tr>
   </table>
-  <div style="margin-top:4pt; margin-bottom:10pt;">
-    <span style="font-weight:bold;">Điểm</span>: ...............&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-    <span style="font-weight:bold;">Lời phê của giáo viên</span>: ...........................................................
-  </div>`;
+  <table style="width:100%; border:1pt solid #000; border-collapse:collapse; margin-top:8pt; margin-bottom:12pt; font-family:'Times New Roman';">
+    <tr>
+      <td colspan="2" style="width:40%; border:1pt solid #000; text-align:center; font-weight:bold; padding:4pt; font-size:11pt;">ĐIỂM</td>
+      <td rowspan="2" style="width:60%; border:1pt solid #000; text-align:center; font-weight:bold; padding:4pt; font-size:11pt; vertical-align:middle;">LỜI PHÊ CỦA GIÁO VIÊN</td>
+    </tr>
+    <tr>
+      <td style="width:20%; border:1pt solid #000; text-align:center; font-style:italic; padding:3pt; font-size:9pt;">Bằng số</td>
+      <td style="width:20%; border:1pt solid #000; text-align:center; font-style:italic; padding:3pt; font-size:9pt;">Bằng chữ</td>
+    </tr>
+    <tr>
+      <td style="height:35pt; border:1pt solid #000; text-align:center;"></td>
+      <td style="height:35pt; border:1pt solid #000; text-align:center;"></td>
+      <td style="height:35pt; border:1pt solid #000; text-align:center;"></td>
+    </tr>
+  </table>`;
 }
 
 function getExamBody(exam: Exam) {
@@ -272,10 +282,20 @@ function getExamBody(exam: Exam) {
       }
       // MCQ question
       const optRows: string[] = [];
-      for (let i = 0; i < q.options.length; i += 3) {
-        const cells = q.options.slice(i, i + 3).map(opt => `<td>${opt}</td>`).join("");
+      const maxOptLength = Math.max(...q.options.map(opt => opt.length));
+      
+      if (maxOptLength > 25) {
+        // Vertical layout: 1 option per row
+        q.options.forEach(opt => {
+          optRows.push(`<tr><td style="width: 100%; padding: 2pt 0;">${opt}</td></tr>`);
+        });
+      } else {
+        // Horizontal layout: all options in one row
+        const widthPercent = 100 / q.options.length;
+        const cells = q.options.map(opt => `<td style="width: ${widthPercent}%; padding: 2pt 0;">${opt}</td>`).join("");
         optRows.push(`<tr>${cells}</tr>`);
       }
+      
       return `
         <div class="question">
           <span class="question-number">Câu ${q.id}.</span> <span class="question-text">${q.questionText}</span>
@@ -334,35 +354,78 @@ function getAnswerSheet(exam: Exam) {
   return html;
 }
 
-function markdownToHtml(md: string) {
+function markdownToHtml(md: string): string {
   if (!md) return "";
-  let html = md.replace(/\\n/g, "<br/>");
-  html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-  html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  
+  // Normalize literal "\n" strings that might be returned by JSON
+  let normalized = md.replace(/\\n/g, "\n");
+  
+  const lines = normalized.split(/\r?\n/);
+  const resultLines: string[] = [];
+  let inTable = false;
+  let tableRows: string[] = [];
+  let isFirstTableRow = true;
+  
+  const flushTable = () => {
+    if (tableRows.length > 0) {
+      resultLines.push('<table class="matrix-table">');
+      resultLines.push(tableRows.join("\n"));
+      resultLines.push('</table>');
+      tableRows = [];
+      inTable = false;
+      isFirstTableRow = true;
+    }
+  };
 
-  const rows = html.split('<br/>').filter(r => r.trim().startsWith('|'));
-  if (rows.length > 2) {
-    const tableHtml = ['<table class="matrix-table">'];
-    rows.forEach((row, index) => {
-      if (row.includes('---')) return;
-      const cols = row.split('|').filter(c => c.trim());
-      tableHtml.push('<tr>');
-      cols.forEach(col => {
-        if (index === 0) tableHtml.push(`<th>${col.trim()}</th>`);
-        else tableHtml.push(`<td>${col.trim()}</td>`);
-      });
-      tableHtml.push('</tr>');
-    });
-    tableHtml.push('</table>');
-    const firstRow = rows[0];
-    const lastRow = rows[rows.length - 1];
-    const startIndex = html.indexOf(firstRow);
-    const endIndex = html.indexOf(lastRow) + lastRow.length;
-    html = html.substring(0, startIndex) + tableHtml.join('') + html.substring(endIndex);
+  for (let line of lines) {
+    const trimmed = line.trim();
+    
+    if (trimmed.startsWith("|")) {
+      inTable = true;
+      if (trimmed.includes("---")) {
+        // Skip header separator row
+        continue;
+      }
+      const cells = trimmed.split("|").map(c => c.trim()).filter((_, idx, arr) => idx > 0 && idx < arr.length - 1);
+      const rowHtml = cells.map(cell => {
+        // Process bold or italic inline formatting inside table cells
+        let processedCell = cell.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+        processedCell = processedCell.replace(/\*(.*?)\*/g, "<em>$1</em>");
+        return isFirstTableRow ? `<th>${processedCell}</th>` : `<td>${processedCell}</td>`;
+      }).join("");
+      
+      tableRows.push(`<tr>${rowHtml}</tr>`);
+      isFirstTableRow = false;
+    } else {
+      flushTable();
+      
+      // Process standard markdown blocks
+      let processedLine = line;
+      if (trimmed.startsWith("###")) {
+        processedLine = `<h3>${trimmed.substring(3).trim()}</h3>`;
+      } else if (trimmed.startsWith("##")) {
+        processedLine = `<h2>${trimmed.substring(2).trim()}</h2>`;
+      } else if (trimmed.startsWith("#")) {
+        processedLine = `<h1>${trimmed.substring(1).trim()}</h1>`;
+      } else if (trimmed.startsWith("-") || trimmed.startsWith("*")) {
+        const content = trimmed.substring(1).trim();
+        processedLine = `<li>${content.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}</li>`;
+      } else {
+        // Process bold/italic inline
+        processedLine = processedLine.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+        processedLine = processedLine.replace(/\*(.*?)\*/g, "<em>$1</em>");
+        if (trimmed) {
+          processedLine = `<p>${processedLine}</p>`;
+        }
+      }
+      resultLines.push(processedLine);
+    }
   }
-  return html;
+  
+  // Flush any remaining table at the end
+  flushTable();
+  
+  return resultLines.join("\n");
 }
 
 // --- Export Functions ---

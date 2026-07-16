@@ -34,6 +34,8 @@ export interface Exam {
   versionCode?: string; // Code for shuffled versions (e.g. "Mã đề 101")
   matrixData?: string;
   specData?: string;
+  transcripts?: string;
+  writingRubric?: string;
 }
 
 export interface ExamHistory {
