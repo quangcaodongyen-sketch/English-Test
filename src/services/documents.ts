@@ -216,27 +216,43 @@ export async function buildKnowledgeContext(grade: number, units?: number[], ski
 
   const textbooks = docs.filter(d => d.category === "textbook");
   if (textbooks.length > 0) {
-    // Limit text to ~8000 chars to avoid token overflow
-    const combinedText = textbooks.map(d => d.extractedText).join("\n");
-    sections.push(`[SÁCH GIÁO KHOA LỚP ${grade}]\n${combinedText.slice(0, 8000)}`);
+    let combinedText = "";
+    // If we have selected units, search for unit-specific text in the uploaded documents
+    if (units && units.length > 0) {
+      textbooks.forEach(doc => {
+        units.forEach(unit => {
+          const regex = new RegExp(`(?:unit|bài|lesson)\\s*${unit}\\b[\\s\\S]{1,3000}`, "gi");
+          const matches = doc.extractedText.match(regex);
+          if (matches) {
+            combinedText += `\n[Tài liệu tham khảo ${doc.fileName} - Phần học liên quan đến Unit ${unit}]:\n` + matches.join("\n...\n");
+          }
+        });
+      });
+    }
+
+    // Fallback if no unit-specific content matched
+    if (!combinedText.trim()) {
+      combinedText = textbooks.map(d => d.extractedText).join("\n").slice(0, 10000);
+    }
+    sections.push(`[TÀI LIỆU SGK THAM KHẢO LỚP ${grade}]\n${combinedText.slice(0, 15000)}`);
   }
 
   const samples = docs.filter(d => d.category === "sample_exam");
   if (samples.length > 0) {
     const combinedText = samples.map(d => `--- Đề mẫu: ${d.fileName} ---\n${d.extractedText}`).join("\n");
-    sections.push(`[ĐỀ MẪU THAM KHẢO]\n${combinedText.slice(0, 5000)}`);
+    sections.push(`[ĐỀ MẪU THAM KHẢO]\n${combinedText.slice(0, 6000)}`);
   }
 
   const matrices = docs.filter(d => d.category === "matrix");
   if (matrices.length > 0) {
     const combinedText = matrices.map(d => `--- Ma trận: ${d.fileName} ---\n${d.extractedText}`).join("\n");
-    sections.push(`[MA TRẬN ĐẶC TẢ]\n${combinedText.slice(0, 3000)}`);
+    sections.push(`[MA TRẬN ĐẶC TẢ]\n${combinedText.slice(0, 4000)}`);
   }
 
   const specs = docs.filter(d => d.category === "spec");
   if (specs.length > 0) {
     const combinedText = specs.map(d => `--- Đặc tả: ${d.fileName} ---\n${d.extractedText}`).join("\n");
-    sections.push(`[BẢN ĐẶC TẢ]\n${combinedText.slice(0, 3000)}`);
+    sections.push(`[BẢN ĐẶC TẢ]\n${combinedText.slice(0, 4000)}`);
   }
 
   return sections.join("\n\n");

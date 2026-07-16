@@ -751,9 +751,10 @@ export default function App() {
     }
   };
 
-  // Export backups
-  const handleExportBackup = () => {
-    const dataStr = JSON.stringify({ exams, history });
+  // Export backups (includes uploaded reference documents)
+  const handleExportBackup = async () => {
+    const docs = await getAllDocuments();
+    const dataStr = JSON.stringify({ exams, history, uploadedDocs: docs });
     const blob = new Blob([dataStr], { type: "application/json" });
     saveAs(blob, "SmartTest_Backup.json");
     showToast("Đã xuất file lưu trữ thành công!", "success");
@@ -768,6 +769,12 @@ export default function App() {
         const parsed = JSON.parse(event.target?.result as string);
         if (parsed.exams) setExams(parsed.exams);
         if (parsed.history) setHistory(parsed.history);
+        if (parsed.uploadedDocs) {
+          import("localforage").then(async (localforageModule) => {
+            await localforageModule.default.setItem("smarttest_documents", parsed.uploadedDocs);
+            setUploadedDocs(parsed.uploadedDocs);
+          });
+        }
         showToast("Đã khôi phục dữ liệu lưu trữ thành công!", "success");
       } catch (err) {
         showToast("File khôi phục không đúng định dạng!", "error");
