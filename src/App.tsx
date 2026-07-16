@@ -46,11 +46,12 @@ import {
   FolderLock
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { Exam, Question, ExamPart, ExamHistory, User as AppUser, AssignedExam, StudentResult } from "./types";
+import { Exam, Question, ExamPart, ExamHistory, User as AppUser, AssignedExam, StudentResult, ActivityLog } from "./types";
 import { initialExams } from "./demoData";
 import { shuffleExam, exportToWord, exportAnswersToWord, exportMatrixToWord, exportSpecToWord, exportAllToZip } from "./utils";
 import { processAndStoreFiles, getAllDocuments, deleteDocument, buildKnowledgeContext, ACCEPTED_FILE_TYPES, DocCategory, UploadedDocument } from "./services/documents";
 import { generateExamAI, analyzeMatrixAI, chatWithTutorAI } from "./services/ai";
+import AdminDashboard from "./components/AdminDashboard";
 
 const initialUsers: AppUser[] = [
   {
@@ -212,7 +213,13 @@ export default function App() {
   const [authGradeClass, setAuthGradeClass] = useState("");
   const [authRole, setAuthRole] = useState<"teacher" | "student">("teacher");
 
-  // Dashboard Tabs
+  // Activity Logs
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(() => {
+    const saved = localStorage.getItem("smarttest_activity_logs");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Dashboard Tabs (admin tab now managed inside AdminDashboard)
   const [activeAdminTab, setActiveAdminTab] = useState<"stats" | "users" | "logs">("stats");
   const [activeTeacherTab, setActiveTeacherTab] = useState<"create" | "assigned">("create");
   const [activeStudentTab, setActiveStudentTab] = useState<"assigned" | "results">("assigned");
@@ -269,6 +276,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("smarttest_assigned_exams", JSON.stringify(assignedExams));
   }, [assignedExams]);
+
+  useEffect(() => {
+    localStorage.setItem("smarttest_activity_logs", JSON.stringify(activityLogs));
+  }, [activityLogs]);
 
   useEffect(() => {
     localStorage.setItem("smarttest_exams", JSON.stringify(exams));
@@ -353,6 +364,22 @@ export default function App() {
     setTimeout(() => setToast(null), 4000);
   };
 
+  // Activity Log helper
+  const addActivityLog = (action: ActivityLog["action"], target?: string, details?: string) => {
+    if (!currentUser) return;
+    const log: ActivityLog = {
+      id: `log-${Date.now()}`,
+      action,
+      userId: currentUser.id,
+      userName: currentUser.fullName,
+      userRole: currentUser.role,
+      target,
+      details,
+      timestamp: new Date().toISOString(),
+    };
+    setActivityLogs(prev => [log, ...prev].slice(0, 500)); // Keep max 500 logs
+  };
+
   // Auth Operations
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -433,6 +460,19 @@ export default function App() {
     }));
   };
 
+  const handleDeleteUser = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+    if (user.role === "admin") {
+      showToast("Không thể xóa tài khoản Quản trị viên hệ thống!", "error");
+      return;
+    }
+    if (confirm(`Bạn có chắc chắn muốn xóa thành viên ${user.fullName} (${user.username}) khỏi hệ thống?`)) {
+      setUsers(prev => prev.filter(u => u.id !== userId));
+      showToast(`Đã xóa thành viên ${user.fullName}.`, "success");
+    }
+  };
+
   // Assign exam to student
   const handleAssignExam = (exam: Exam) => {
     setExamToAssign(exam);
@@ -447,11 +487,15 @@ export default function App() {
       examId: examToAssign.id,
       examTitle: examToAssign.title,
       teacherId: currentUser.id,
+      teacherName: currentUser.fullName,
       assignedAt: new Date().toISOString(),
       results: []
     };
+    // Update exam status to 'assigned'
+    setExams(prev => prev.map(e => e.id === examToAssign.id ? { ...e, status: "assigned" as const } : e));
     setAssignedExams(prev => [newAssignment, ...prev]);
     setAssignModalOpen(false);
+    addActivityLog("exam_assigned", examToAssign.title, `Mã phòng thi: ${assignCode}`);
     showToast(`Giao đề thi thành công! Mã thi: ${assignCode}`, "success");
   };
 
@@ -523,6 +567,7 @@ export default function App() {
       answers: takeAnswers
     };
     setHistory(prev => [newHistory, ...prev]);
+    addActivityLog("student_submitted", currentExam.title, `Điểm: ${score.toFixed(1)}/10 (${correct}/${total} câu đúng)`);
     showToast(`Nộp bài thi thành công! Điểm số: ${score.toFixed(1)}`, "success");
   };
 
@@ -657,11 +702,16 @@ export default function App() {
         term,
         academicYear,
         createdAt: new Date().toISOString(),
+        creatorId: currentUser?.id,
+        creatorName: currentUser?.fullName,
+        status: "saved" as const,
+        semester: term?.includes("I") && !term?.includes("II") ? "HK1" : "HK2",
       };
 
       setExams(prev => [newExam, ...prev]);
       setCurrentExam(newExam);
       setExamMode("view");
+      addActivityLog("exam_created", newExam.title, `Lớp ${selectedGrade} - ${term}`);
       showToast("Biên soạn đề thi thành công!", "success");
     } catch (err: any) {
       showToast("Lỗi từ AI: " + err.message, "error");
@@ -844,20 +894,18 @@ export default function App() {
                   <div className="space-y-1.5">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bạn là ai?</label>
                     <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
+                      <div
                         onClick={() => setAuthRole("teacher")}
-                        className={`py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${authRole === "teacher" ? "bg-amber-500/10 border-amber-500 text-amber-400" : "border-slate-800 bg-slate-950/30 text-slate-400 hover:text-white"}`}
+                        className={`py-2 text-xs font-bold rounded-lg border text-center transition-all cursor-pointer ${authRole === "teacher" ? "bg-amber-500/10 border-amber-500 text-amber-400" : "border-slate-800 bg-slate-950/30 text-slate-400 hover:text-white"}`}
                       >
                         🧑‍🏫 Giáo viên
-                      </button>
-                      <button
-                        type="button"
+                      </div>
+                      <div
                         onClick={() => setAuthRole("student")}
-                        className={`py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${authRole === "student" ? "bg-blue-500/10 border-blue-500 text-blue-400" : "border-slate-800 bg-slate-950/30 text-slate-400 hover:text-white"}`}
+                        className={`py-2 text-xs font-bold rounded-lg border text-center transition-all cursor-pointer ${authRole === "student" ? "bg-blue-500/10 border-blue-500 text-blue-400" : "border-slate-800 bg-slate-950/30 text-slate-400 hover:text-white"}`}
                       >
                         🧑‍🎓 Học sinh
-                      </button>
+                      </div>
                     </div>
                   </div>
 
@@ -935,9 +983,8 @@ export default function App() {
 
             <div className="bg-slate-950/40 p-3 rounded-xl border border-slate-800 text-[10px] text-slate-400 leading-relaxed">
               <span className="font-bold text-indigo-400">💡 Demo nhanh:</span><br/>
-              • Admin: <span className="font-mono text-white bg-slate-900 px-1 py-0.5 rounded font-bold">Admin</span> / <span className="font-mono text-white bg-slate-900 px-1 py-0.5 rounded font-bold">Admin123@</span><br/>
-              • Giáo viên: <span className="font-mono text-slate-300 bg-slate-900 px-1 py-0.5 rounded">hoa.nguyen</span> / mk <span className="font-mono text-slate-300 bg-slate-900 px-1 py-0.5 rounded">123</span><br/>
-              • Học sinh: <span className="font-mono text-slate-300 bg-slate-900 px-1 py-0.5 rounded">nam.nh</span> / mk <span className="font-mono text-slate-300 bg-slate-900 px-1 py-0.5 rounded">123</span>
+              • Giáo viên: <span className="font-mono text-slate-300 bg-slate-900 px-1 py-0.5 rounded">hoa.nguyen</span> / mật khẩu <span className="font-mono text-slate-300 bg-slate-900 px-1 py-0.5 rounded">123</span><br/>
+              • Học sinh: <span className="font-mono text-slate-300 bg-slate-900 px-1 py-0.5 rounded">nam.nh</span> / mật khẩu <span className="font-mono text-slate-300 bg-slate-900 px-1 py-0.5 rounded">123</span>
             </div>
           </motion.div>
         </main>
@@ -1071,29 +1118,10 @@ export default function App() {
             )}
 
             {currentUser.role === "admin" && (
-              <>
-                <button
-                  onClick={() => { setActiveAdminTab("stats"); setExamMode("none"); }}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeAdminTab === "stats" ? "bg-indigo-600 text-white shadow-md" : "text-slate-600 hover:bg-slate-100"}`}
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  <span>Thống kê hệ thống</span>
-                </button>
-                <button
-                  onClick={() => { setActiveAdminTab("users"); setExamMode("none"); }}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeAdminTab === "users" ? "bg-indigo-600 text-white shadow-md" : "text-slate-600 hover:bg-slate-100"}`}
-                >
-                  <Users className="w-4 h-4" />
-                  <span>Người dùng & Kích VIP</span>
-                </button>
-                <button
-                  onClick={() => { setActiveAdminTab("logs"); setExamMode("none"); }}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeAdminTab === "logs" ? "bg-indigo-600 text-white shadow-md" : "text-slate-600 hover:bg-slate-100"}`}
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>Nhật ký hoạt động</span>
-                </button>
-              </>
+              <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-md">
+                <Shield className="w-4 h-4" />
+                <span>Bảng quản trị Admin</span>
+              </div>
             )}
           </div>
         </header>
@@ -1625,10 +1653,51 @@ export default function App() {
             </div>
           )}
 
-          {/* ADMIN OVERVIEW TAB */}
-          {currentUser.role === "admin" && activeAdminTab === "stats" && examMode === "none" && (
-            <div className="space-y-8">
-              {/* Statistical Cards Grid */}
+          {/* ADMIN DASHBOARD (7-tab component) */}
+          {currentUser.role === "admin" && examMode === "none" && (
+            <AdminDashboard
+              users={users}
+              exams={exams}
+              assignedExams={assignedExams}
+              activityLogs={activityLogs}
+              history={history}
+              currentUser={currentUser}
+              onDeleteUser={handleDeleteUser}
+              onToggleVip={handleToggleVip}
+              onDeleteExam={(examId) => {
+                if (confirm("Bạn có chắc chắn muốn xóa đề kiểm tra này?")) {
+                  const exam = exams.find(e => e.id === examId);
+                  setExams(prev => prev.filter(e => e.id !== examId));
+                  addActivityLog("exam_deleted", exam?.title || examId);
+                  showToast("Đã xóa đề kiểm tra.", "success");
+                }
+              }}
+              onDuplicateExam={(exam) => {
+                const dup: Exam = {
+                  ...exam,
+                  id: `exam-${Date.now()}`,
+                  title: `${exam.title} (Bản sao)`,
+                  createdAt: new Date().toISOString(),
+                  creatorId: currentUser.id,
+                  creatorName: currentUser.fullName,
+                  status: "saved",
+                };
+                setExams(prev => [dup, ...prev]);
+                addActivityLog("exam_duplicated", dup.title, `Nhân bản từ: ${exam.title}`);
+                showToast("Đã nhân bản đề kiểm tra!", "success");
+              }}
+              onViewExam={(exam) => {
+                setCurrentExam(exam);
+                setExamMode("view");
+              }}
+              showToast={showToast}
+            />
+          )}
+
+
+
+
+          {/* DETAILED EXAM VIEW & INTERACTIONS INTERFACE */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 flex items-center justify-between">
                   <div>
@@ -1768,6 +1837,12 @@ export default function App() {
                                   Hủy VIP
                                 </button>
                               )}
+                              <button
+                                onClick={() => handleDeleteUser(u.id)}
+                                className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-[10px] font-bold cursor-pointer border border-rose-200"
+                              >
+                                Xóa
+                              </button>
                             </div>
                           )}
                         </td>

@@ -36,6 +36,11 @@ export interface Exam {
   specData?: string;
   transcripts?: string;
   writingRubric?: string;
+  // --- New fields for admin management ---
+  creatorId?: string;       // ID of the teacher who created this exam
+  creatorName?: string;     // Display name of the creator
+  status?: "draft" | "saved" | "exported" | "assigned"; // Exam lifecycle status
+  semester?: string;        // e.g. "HK1", "HK2"
 }
 
 export interface User {
@@ -59,6 +64,11 @@ export interface StudentResult {
   correctCount: number;
   totalQuestions: number;
   takenAt: string;
+  // --- New fields for detailed tracking ---
+  startedAt?: string;       // When the student started the exam
+  wrongCount?: number;      // Number of wrong answers
+  status?: "in_progress" | "submitted" | "overdue"; // Submission status
+  answers?: Record<string, string>; // questionId -> answer chosen
 }
 
 export interface AssignedExam {
@@ -66,8 +76,10 @@ export interface AssignedExam {
   examId: string;
   examTitle: string;
   teacherId: string;
+  teacherName?: string;     // Display name of assigning teacher
   assignedAt: string;
   results: StudentResult[];
+  showAnswers?: boolean;    // Whether students can see correct answers after submission
 }
 
 export interface ExamHistory {
@@ -83,12 +95,51 @@ export interface ExamHistory {
   answers: Record<string, string>; // questionId -> answer chosen
 }
 
+// --- New interfaces for admin management ---
+
+export type ActivityAction =
+  | "exam_created"
+  | "exam_exported"
+  | "exam_deleted"
+  | "exam_duplicated"
+  | "exam_assigned"
+  | "student_submitted"
+  | "user_registered"
+  | "vip_activated"
+  | "vip_revoked"
+  | "user_deleted"
+  | "report_exported";
+
+export interface ActivityLog {
+  id: string;
+  action: ActivityAction;
+  userId: string;
+  userName: string;
+  userRole: "teacher" | "student" | "admin";
+  target?: string;          // e.g. exam title, user name
+  details?: string;         // Additional context
+  timestamp: string;
+}
+
+export interface ClassScoreStats {
+  gradeClass: string;
+  totalStudents: number;
+  submittedCount: number;
+  notSubmittedCount: number;
+  averageScore: number;
+  highestScore: number;
+  lowestScore: number;
+  passCount: number;        // Score >= 5
+  failCount: number;        // Score < 5
+}
+
 export interface AppState {
   savedExams: Exam[];
   history: ExamHistory[];
   users: User[];
   currentUser: User | null;
   assignedExams: AssignedExam[];
+  activityLogs: ActivityLog[];
   settings: {
     theme: "light" | "dark";
     autoSave: boolean;
