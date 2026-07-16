@@ -2,8 +2,11 @@ import * as pdfjsLib from "pdfjs-dist";
 import localforage from "localforage";
 import { TEXTBOOK_CONTENT } from "./textbookContent";
 
-// Initialize pdf.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Initialize pdf.js worker locally using modern ES URL syntax to prevent CDN network/CORS errors
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url
+).toString();
 
 // Storage keys
 const DOCS_STORE_KEY = "smarttest_documents";
